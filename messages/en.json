@@ -71,7 +71,16 @@
     "description": "Review saved decisions and their analysis state.",
     "emptyTitle": "No decisions yet",
     "emptyDescription": "Saved decisions will appear here after you capture them.",
+    "filteredEmptyTitle": "No matching decisions",
+    "filteredEmptyDescription": "Change the filters to see more saved decisions.",
     "categoryLabel": "Category: {category}",
+    "categoryFilter": "Category",
+    "biasFilter": "Bias",
+    "sortControl": "Sort",
+    "allCategories": "All categories",
+    "allBiases": "All biases",
+    "sortCreatedAt": "Newest first",
+    "sortComplexity": "Complexity",
     "openDetail": "Open decision"
   },
   "DecisionDetail": {

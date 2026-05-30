@@ -71,7 +71,16 @@
     "description": "Переглядайте збережені рішення та стан їхнього аналізу.",
     "emptyTitle": "Рішень ще немає",
     "emptyDescription": "Збережені рішення з'являться тут після створення.",
+    "filteredEmptyTitle": "Збігів не знайдено",
+    "filteredEmptyDescription": "Змініть фільтри, щоб побачити більше збережених рішень.",
     "categoryLabel": "Категорія: {category}",
+    "categoryFilter": "Категорія",
+    "biasFilter": "Упередження",
+    "sortControl": "Сортування",
+    "allCategories": "Усі категорії",
+    "allBiases": "Усі упередження",
+    "sortCreatedAt": "Найновіші спочатку",
+    "sortComplexity": "Складність",
     "openDetail": "Відкрити рішення"
   },
   "DecisionDetail": {

@@ -1,9 +1,13 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DecisionHistoryList } from "@/components/decisions/decision-history-list";
+import { COGNITIVE_BIASES, DECISION_CATEGORIES } from "@/lib/taxonomy";
 import type { DecisionHistoryItem } from "@/lib/decisions/history";
+
+const replaceMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
@@ -11,7 +15,8 @@ vi.mock("@/lib/i18n/navigation", () => ({
       {children}
     </a>
   ),
-  useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => "/decisions",
+  useRouter: () => ({ refresh: vi.fn(), replace: replaceMock }),
 }));
 
 const messages = {
@@ -20,7 +25,16 @@ const messages = {
     description: "Review saved decisions and their analysis state.",
     emptyTitle: "No decisions yet",
     emptyDescription: "Saved decisions will appear here after you capture them.",
+    filteredEmptyTitle: "No matching decisions",
+    filteredEmptyDescription: "Change the filters to see more saved decisions.",
     categoryLabel: "Category: {category}",
+    categoryFilter: "Category",
+    biasFilter: "Bias",
+    sortControl: "Sort",
+    allCategories: "All categories",
+    allBiases: "All biases",
+    sortCreatedAt: "Newest first",
+    sortComplexity: "Complexity",
     openDetail: "Open decision",
   },
   AnalysisState: {
@@ -50,6 +64,16 @@ const messages = {
       lifestyle: "Lifestyle",
       other: "Other",
     },
+    bias: {
+      anchoring: "Anchoring",
+      confirmation_bias: "Confirmation bias",
+      sunk_cost_fallacy: "Sunk cost fallacy",
+      overconfidence: "Overconfidence",
+      availability_heuristic: "Availability heuristic",
+      loss_aversion: "Loss aversion",
+      status_quo_bias: "Status quo bias",
+      optimism_bias: "Optimism bias",
+    },
   },
 };
 
@@ -62,6 +86,8 @@ function renderWithIntl(component: React.ReactNode) {
 }
 
 function historyItem(overrides: Partial<DecisionHistoryItem> = {}): DecisionHistoryItem {
+  const complexity = overrides.complexity === undefined ? 4 : overrides.complexity;
+
   return {
     id: "decision_1",
     summary: "Accept the startup offer",
@@ -77,11 +103,13 @@ function historyItem(overrides: Partial<DecisionHistoryItem> = {}): DecisionHist
     },
     newestReadyCategory: "career",
     ...overrides,
+    complexity,
   };
 }
 
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -146,6 +174,63 @@ describe("decision history list", () => {
       screen.getByText("Saved decisions will appear here after you capture them."),
     ).toBeDefined();
     expect(screen.queryByText("Accept the startup offer")).toBeNull();
+  });
+
+  it("renders localized filter and sort controls with selected values", () => {
+    renderWithIntl(
+      <DecisionHistoryList
+        decisions={[historyItem()]}
+        filters={{ category: "career", bias: "confirmation_bias" }}
+        sort="complexity"
+      />,
+    );
+
+    const categorySelect = screen.getByLabelText("Category") as HTMLSelectElement;
+    const biasSelect = screen.getByLabelText("Bias") as HTMLSelectElement;
+    const sortSelect = screen.getByLabelText("Sort") as HTMLSelectElement;
+
+    expect(categorySelect.value).toBe("career");
+    expect(biasSelect.value).toBe("confirmation_bias");
+    expect(sortSelect.value).toBe("complexity");
+    expect(within(categorySelect).getAllByRole("option")).toHaveLength(
+      DECISION_CATEGORIES.length + 1,
+    );
+    expect(within(biasSelect).getAllByRole("option")).toHaveLength(COGNITIVE_BIASES.length + 1);
+    expect(screen.getByRole("option", { name: "Career" })).toBeDefined();
+    expect(screen.getByRole("option", { name: "Confirmation bias" })).toBeDefined();
+    expect(screen.getByRole("option", { name: "Complexity" })).toBeDefined();
+  });
+
+  it("updates the locale-aware query string when a control changes", async () => {
+    const user = userEvent.setup();
+
+    renderWithIntl(
+      <DecisionHistoryList
+        decisions={[historyItem()]}
+        filters={{ category: null, bias: "confirmation_bias" }}
+        sort="complexity"
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Category"), "finance");
+
+    expect(replaceMock).toHaveBeenCalledWith(
+      "/decisions?category=finance&bias=confirmation_bias&sort=complexity",
+    );
+  });
+
+  it("renders a filtered empty state distinct from no decisions", () => {
+    renderWithIntl(
+      <DecisionHistoryList
+        decisions={[]}
+        filters={{ category: "career", bias: null }}
+        sort="created_at"
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "No matching decisions" })).toBeDefined();
+    expect(screen.getByText("Change the filters to see more saved decisions.")).toBeDefined();
+    expect(screen.queryByRole("heading", { name: "No decisions yet" })).toBeNull();
   });
 
   it("shows stalled retryable state without polling or telemetry payloads", () => {

@@ -2,29 +2,80 @@
 
 import { ArrowRight, History } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useTransition } from "react";
 
 import { AnalysisStateMessage, AnalysisStatusBadge } from "@/components/decisions/analysis-status";
 import {
   DecisionStatusPoller,
   type DecisionStatusUpdate,
 } from "@/components/decisions/decision-status-poller";
-import { Link } from "@/lib/i18n/navigation";
+import type {
+  DecisionHistoryFilters,
+  DecisionHistoryItem,
+  DecisionHistorySort,
+} from "@/lib/decisions/history";
+import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
 import { useTaxonomyLabels } from "@/lib/i18n/taxonomy-labels";
-import type { DecisionHistoryItem } from "@/lib/decisions/history";
+import {
+  COGNITIVE_BIASES,
+  DECISION_CATEGORIES,
+  type CognitiveBias,
+  type DecisionCategory,
+} from "@/lib/taxonomy";
 
 type DecisionHistoryListProps = {
   decisions: DecisionHistoryItem[];
+  filters?: DecisionHistoryFilters;
+  sort?: DecisionHistorySort;
 };
 
-export function DecisionHistoryList({ decisions }: DecisionHistoryListProps) {
+type DecisionHistoryQueryState = DecisionHistoryFilters & {
+  sort: DecisionHistorySort;
+};
+
+const defaultFilters: DecisionHistoryFilters = { category: null, bias: null };
+
+function historyListHref(pathname: string, state: DecisionHistoryQueryState) {
+  const params = new URLSearchParams();
+
+  if (state.category) params.set("category", state.category);
+  if (state.bias) params.set("bias", state.bias);
+  if (state.sort !== "created_at") params.set("sort", state.sort);
+
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+export function DecisionHistoryList({
+  decisions,
+  filters = defaultFilters,
+  sort = "created_at",
+}: DecisionHistoryListProps) {
   const t = useTranslations("DecisionHistory");
   const labels = useTaxonomyLabels();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
   const [statusUpdates, setStatusUpdates] = useState<Record<string, DecisionStatusUpdate>>({});
 
   const handleStatusChange = useCallback((update: DecisionStatusUpdate) => {
     setStatusUpdates((current) => ({ ...current, [update.decisionId]: update }));
   }, []);
+  const updateQueryState = useCallback(
+    (nextState: Partial<DecisionHistoryQueryState>) => {
+      const href = historyListHref(pathname, {
+        category: filters.category,
+        bias: filters.bias,
+        sort,
+        ...nextState,
+      });
+
+      startTransition(() => {
+        router.replace(href);
+      });
+    },
+    [filters.bias, filters.category, pathname, router, sort],
+  );
   const visibleDecisions = decisions.map((decision) => {
     const update = statusUpdates[decision.id];
     return update
@@ -42,6 +93,7 @@ export function DecisionHistoryList({ decisions }: DecisionHistoryListProps) {
         }
       : decision;
   });
+  const hasActiveFilters = Boolean(filters.category || filters.bias);
 
   return (
     <section className="grid gap-6">
@@ -62,10 +114,73 @@ export function DecisionHistoryList({ decisions }: DecisionHistoryListProps) {
         <p className="text-muted-foreground max-w-2xl text-sm">{t("description")}</p>
       </header>
 
+      <div className="border-border bg-muted/20 grid gap-3 rounded-md border p-3 sm:grid-cols-3">
+        <label className="grid gap-1 text-sm">
+          <span className="text-muted-foreground">{t("categoryFilter")}</span>
+          <select
+            value={filters.category ?? ""}
+            disabled={isPending}
+            className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+            onChange={(event) => {
+              updateQueryState({
+                category: event.target.value ? (event.target.value as DecisionCategory) : null,
+              });
+            }}
+          >
+            <option value="">{t("allCategories")}</option>
+            {DECISION_CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {labels.category(category)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1 text-sm">
+          <span className="text-muted-foreground">{t("biasFilter")}</span>
+          <select
+            value={filters.bias ?? ""}
+            disabled={isPending}
+            className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+            onChange={(event) => {
+              updateQueryState({
+                bias: event.target.value ? (event.target.value as CognitiveBias) : null,
+              });
+            }}
+          >
+            <option value="">{t("allBiases")}</option>
+            {COGNITIVE_BIASES.map((bias) => (
+              <option key={bias} value={bias}>
+                {labels.bias(bias)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1 text-sm">
+          <span className="text-muted-foreground">{t("sortControl")}</span>
+          <select
+            value={sort}
+            disabled={isPending}
+            className="border-input bg-background h-9 rounded-md border px-2 text-sm"
+            onChange={(event) => {
+              updateQueryState({ sort: event.target.value as DecisionHistorySort });
+            }}
+          >
+            <option value="created_at">{t("sortCreatedAt")}</option>
+            <option value="complexity">{t("sortComplexity")}</option>
+          </select>
+        </label>
+      </div>
+
       {visibleDecisions.length === 0 ? (
         <div className="border-border bg-muted/20 grid gap-2 rounded-md border px-4 py-6">
-          <h2 className="font-heading text-lg font-semibold">{t("emptyTitle")}</h2>
-          <p className="text-muted-foreground text-sm">{t("emptyDescription")}</p>
+          <h2 className="font-heading text-lg font-semibold">
+            {hasActiveFilters ? t("filteredEmptyTitle") : t("emptyTitle")}
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {hasActiveFilters ? t("filteredEmptyDescription") : t("emptyDescription")}
+          </p>
         </div>
       ) : (
         <ul className="grid gap-3">
