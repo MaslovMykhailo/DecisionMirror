@@ -5,7 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 
 import { sentryInitOptions } from "@/lib/observability/sentry";
 
-Sentry.init(sentryInitOptions());
+Sentry.init(sentryInitOptions(process.env));
 
 // Required so Next.js can instrument client-side navigations for tracing.
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
