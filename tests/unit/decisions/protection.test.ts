@@ -119,8 +119,19 @@ describe("protected decision access", () => {
     const db = {
       decision: { findFirst: vi.fn().mockResolvedValue({ id: "decision_1" }) },
       analysis: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "analysis_2",
+          version: 2,
+          status: "ready",
+          updatedAt: new Date("2026-05-30T12:00:00.000Z"),
+        }),
         aggregate: vi.fn().mockResolvedValue({ _max: { version: 2 } }),
-        create: vi.fn().mockResolvedValue({ id: "analysis_3" }),
+        create: vi.fn().mockResolvedValue({
+          id: "analysis_3",
+          version: 3,
+          status: "processing",
+          updatedAt: new Date("2026-05-30T12:05:00.000Z"),
+        }),
       },
     };
     const triggerAnalysis = vi.fn();
@@ -131,11 +142,17 @@ describe("protected decision access", () => {
         db,
         triggerAnalysis,
         locale: "uk",
+        now: () => new Date("2026-05-30T12:05:00.000Z"),
       }),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       status: "success",
-      analysisId: "analysis_3",
-      version: 3,
+      analysis: {
+        analysisId: "analysis_3",
+        version: 3,
+        status: "processing",
+        isStalled: false,
+        retryable: false,
+      },
     });
 
     expect(db.analysis.create).toHaveBeenCalledWith({
@@ -144,8 +161,14 @@ describe("protected decision access", () => {
         version: 3,
         status: "processing",
         locale: "uk",
+        updatedAt: expect.any(Date),
       },
-      select: { id: true },
+      select: {
+        id: true,
+        version: true,
+        status: true,
+        updatedAt: true,
+      },
     });
     expect(triggerAnalysis).toHaveBeenCalledWith("decision_1");
   });

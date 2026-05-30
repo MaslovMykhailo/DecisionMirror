@@ -1,86 +1,4 @@
-# decision-history Specification
-
-## Purpose
-Define authenticated decision history list and detail views, shared analysis state
-presentation, and client-side status polling for saved decisions while preserving
-per-user isolation and telemetry privacy.
-## Requirements
-### Requirement: Authenticated decision list
-
-The system SHALL provide an authenticated decision history list scoped to the session
-user. Each listed decision MUST show a concise summary of the saved decision input, the
-category from the newest ready analysis when available, and a badge representing the newest
-analysis status.
-
-#### Scenario: Owner sees only their decisions
-
-- **WHEN** an authenticated user opens the decision history list
-- **THEN** the system queries decisions owned by the authenticated session user's `userId`
-- **AND** the list excludes decisions owned by any other user
-
-#### Scenario: List row shows decision metadata
-
-- **WHEN** a listed decision has at least one analysis
-- **THEN** the row shows a concise summary of the original decision input
-- **AND** the row shows the newest analysis status as a badge
-- **AND** the row shows the newest ready analysis category when a ready analysis exists
-
-#### Scenario: Processing row has no ready category
-
-- **WHEN** a listed decision has only a `processing` analysis
-- **THEN** the row shows a processing status badge
-- **AND** the row does not present a completed category as if analysis were ready
-
-#### Scenario: Empty history
-
-- **WHEN** an authenticated user has no decisions
-- **THEN** the decision history list renders an empty state
-- **AND** the empty state does not show another user's decisions or analysis data
-
-### Requirement: Authenticated decision detail
-
-The system SHALL provide an authenticated decision detail view scoped to the session user.
-The detail view MUST show the original submitted `situation`, `decision`, and optional
-`reasoning` alongside analysis state, the newest ready structured analysis result when
-available, and all ready analysis versions needed for version switching.
-
-#### Scenario: Owner sees original input and ready analysis
-
-- **WHEN** an authenticated user opens the detail view for one of their decisions with a
-  ready analysis
-- **THEN** the view shows the original submitted situation, decision, and optional reasoning
-- **AND** the view shows the ready analysis category, biases, missed alternatives,
-  premortem risks, key assumptions, and warning signs
-- **AND** the current displayed analysis is the newest ready version
-
-#### Scenario: Cross-user detail read is denied
-
-- **WHEN** an authenticated user opens the detail view for a decision owned by another user
-- **THEN** the system denies the read or renders not found
-- **AND** the response does not include the other user's original input or analysis content
-
-#### Scenario: Detail shows processing state before ready output exists
-
-- **WHEN** an authenticated user opens the detail view for a decision whose newest analysis
-  is `processing` and no ready analysis exists
-- **THEN** the view shows the original submitted input
-- **AND** the analysis area explains that the analysis is not ready yet
-
-#### Scenario: Detail preserves previous ready output during re-analysis
-
-- **WHEN** an authenticated user opens the detail view for a decision with an older ready
-  analysis and a newer `processing` analysis
-- **THEN** the view shows the original submitted input
-- **AND** the view shows the older ready analysis result as the current available result
-- **AND** the view indicates that a newer analysis is still processing
-
-#### Scenario: Detail shows failed state
-
-- **WHEN** an authenticated user opens the detail view for a decision whose newest analysis
-  is `failed`
-- **THEN** the analysis area shows a failed state
-- **AND** the failed state includes the stored failure reason when one exists
-- **AND** the detail view offers retry for the failed analysis
+## ADDED Requirements
 
 ### Requirement: Decision detail retry and re-analysis controls
 
@@ -139,6 +57,53 @@ rendered analysis result, not the newest analysis status or polling state.
 - **AND** the newest analysis status still communicates failed, processing, or stalled state
   separately from the selected ready result
 
+## MODIFIED Requirements
+
+### Requirement: Authenticated decision detail
+
+The system SHALL provide an authenticated decision detail view scoped to the session user.
+The detail view MUST show the original submitted `situation`, `decision`, and optional
+`reasoning` alongside analysis state, the newest ready structured analysis result when
+available, and all ready analysis versions needed for version switching.
+
+#### Scenario: Owner sees original input and ready analysis
+
+- **WHEN** an authenticated user opens the detail view for one of their decisions with a
+  ready analysis
+- **THEN** the view shows the original submitted situation, decision, and optional reasoning
+- **AND** the view shows the ready analysis category, biases, missed alternatives,
+  premortem risks, key assumptions, and warning signs
+- **AND** the current displayed analysis is the newest ready version
+
+#### Scenario: Cross-user detail read is denied
+
+- **WHEN** an authenticated user opens the detail view for a decision owned by another user
+- **THEN** the system denies the read or renders not found
+- **AND** the response does not include the other user's original input or analysis content
+
+#### Scenario: Detail shows processing state before ready output exists
+
+- **WHEN** an authenticated user opens the detail view for a decision whose newest analysis
+  is `processing` and no ready analysis exists
+- **THEN** the view shows the original submitted input
+- **AND** the analysis area explains that the analysis is not ready yet
+
+#### Scenario: Detail preserves previous ready output during re-analysis
+
+- **WHEN** an authenticated user opens the detail view for a decision with an older ready
+  analysis and a newer `processing` analysis
+- **THEN** the view shows the original submitted input
+- **AND** the view shows the older ready analysis result as the current available result
+- **AND** the view indicates that a newer analysis is still processing
+
+#### Scenario: Detail shows failed state
+
+- **WHEN** an authenticated user opens the detail view for a decision whose newest analysis
+  is `failed`
+- **THEN** the analysis area shows a failed state
+- **AND** the failed state includes the stored failure reason when one exists
+- **AND** the detail view offers retry for the failed analysis
+
 ### Requirement: Client status polling with backoff
 
 The system SHALL poll analysis status from the client while any visible decision analysis
@@ -193,6 +158,12 @@ states MUST not expose raw private decision text through telemetry payloads.
 - **THEN** the list or detail view explains that the analysis is not ready yet
 - **AND** the view does not render empty result sections as if they were completed analysis
 
+#### Scenario: Stalled state explains retryable processing
+
+- **WHEN** the newest analysis for a decision is `processing` and marked stalled
+- **THEN** the list or detail view shows a retryable stalled state
+- **AND** the detail view provides retry without exposing raw decision content in telemetry
+
 #### Scenario: Failed state explains retryable failure
 
 - **WHEN** the newest analysis for a decision is failed
@@ -200,12 +171,6 @@ states MUST not expose raw private decision text through telemetry payloads.
 - **AND** the detail view includes a user-facing explanation based on the stored failure
   reason when one exists
 - **AND** the detail view provides retry for the failed analysis
-
-#### Scenario: Stalled state explains retryable processing
-
-- **WHEN** the newest analysis for a decision is `processing` and marked stalled
-- **THEN** the list or detail view shows a retryable stalled state
-- **AND** the detail view provides retry without exposing raw decision content in telemetry
 
 #### Scenario: Telemetry omits decision content
 

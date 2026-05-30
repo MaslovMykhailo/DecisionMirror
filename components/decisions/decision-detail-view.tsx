@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { ArrowLeft, RefreshCw, RotateCcw } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 
 import { AnalysisStateMessage, AnalysisStatusBadge } from "@/components/decisions/analysis-status";
@@ -9,6 +9,7 @@ import {
   DecisionStatusPoller,
   type DecisionStatusUpdate,
 } from "@/components/decisions/decision-status-poller";
+import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/i18n/navigation";
 import { useTaxonomyLabels } from "@/lib/i18n/taxonomy-labels";
 import type {
@@ -19,6 +20,9 @@ import type {
 type DecisionDetailViewProps = {
   result: DecisionHistoryDetailResult;
 };
+
+type AnalysisAction = "retry" | "reanalyze";
+type MutationStatusPayload = Omit<DecisionStatusUpdate, "decisionId">;
 
 type SectionProps = {
   title: string;
@@ -80,9 +84,50 @@ function ReadyAnalysisSections({ analysis }: { analysis: DecisionHistoryReadyAna
   );
 }
 
+function isAnalysisStatus(value: unknown): value is MutationStatusPayload["status"] {
+  return value === "processing" || value === "ready" || value === "failed";
+}
+
+function parseMutationStatusPayload(payload: unknown): MutationStatusPayload | null {
+  if (!payload || typeof payload !== "object") return null;
+  const data = payload as Record<string, unknown>;
+  const analysis = data.analysis;
+  if (!analysis || typeof analysis !== "object") return null;
+
+  const statusData = analysis as Record<string, unknown>;
+  if (
+    typeof statusData.analysisId !== "string" ||
+    typeof statusData.version !== "number" ||
+    !isAnalysisStatus(statusData.status) ||
+    typeof statusData.updatedAt !== "string" ||
+    typeof statusData.isStalled !== "boolean" ||
+    typeof statusData.retryable !== "boolean"
+  ) {
+    return null;
+  }
+
+  return {
+    analysisId: statusData.analysisId,
+    version: statusData.version,
+    status: statusData.status,
+    updatedAt: statusData.updatedAt,
+    isStalled: statusData.isStalled,
+    retryable: statusData.retryable,
+    ...(typeof statusData.failureReason === "string"
+      ? { failureReason: statusData.failureReason }
+      : {}),
+  };
+}
+
 export function DecisionDetailView({ result }: DecisionDetailViewProps) {
   const t = useTranslations("DecisionDetail");
+  const locale = useLocale();
   const [statusUpdate, setStatusUpdate] = useState<DecisionStatusUpdate | null>(null);
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState(
+    result.status === "success" ? (result.readyAnalysis?.analysisId ?? "") : "",
+  );
+  const [pendingAction, setPendingAction] = useState<AnalysisAction | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleStatusChange = useCallback((update: DecisionStatusUpdate) => {
     setStatusUpdate(update);
@@ -96,6 +141,8 @@ export function DecisionDetailView({ result }: DecisionDetailViewProps) {
             version: statusUpdate.version,
             status: statusUpdate.status,
             updatedAt: statusUpdate.updatedAt,
+            isStalled: statusUpdate.isStalled,
+            retryable: statusUpdate.retryable,
             ...(statusUpdate.failureReason ? { failureReason: statusUpdate.failureReason } : {}),
           },
         }
@@ -116,6 +163,48 @@ export function DecisionDetailView({ result }: DecisionDetailViewProps) {
   }
 
   const newestStatus = visibleResult.newestAnalysis?.status ?? null;
+  const readyAnalyses =
+    visibleResult.readyAnalyses.length > 0
+      ? visibleResult.readyAnalyses
+      : visibleResult.readyAnalysis
+        ? [visibleResult.readyAnalysis]
+        : [];
+  const selectedReadyAnalysis =
+    readyAnalyses.find((analysis) => analysis.analysisId === selectedAnalysisId) ??
+    visibleResult.readyAnalysis;
+  const newestAnalysis = visibleResult.newestAnalysis;
+  const activeProcessing = newestAnalysis?.status === "processing" && !newestAnalysis.isStalled;
+  const showRetry = Boolean(newestAnalysis?.retryable);
+  const showReanalysis = Boolean(selectedReadyAnalysis) && !activeProcessing && !showRetry;
+
+  async function runAnalysisAction(action: AnalysisAction) {
+    if (visibleResult.status !== "success") return;
+
+    setPendingAction(action);
+    setActionError(null);
+
+    const url =
+      action === "retry"
+        ? `/api/decisions/${visibleResult.decision.id}/retry`
+        : `/api/decisions/${visibleResult.decision.id}/reanalyze`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers:
+        action === "retry"
+          ? { Accept: "application/json" }
+          : { Accept: "application/json", "Content-Type": "application/json" },
+      ...(action === "reanalyze" ? { body: JSON.stringify({ locale }) } : {}),
+    });
+    const payload = response.ok ? parseMutationStatusPayload(await response.json()) : null;
+
+    setPendingAction(null);
+    if (!payload) {
+      setActionError(response.status === 409 ? t("alreadyProcessing") : t("actionError"));
+      return;
+    }
+
+    setStatusUpdate({ decisionId: visibleResult.decision.id, ...payload });
+  }
 
   return (
     <main className="min-h-screen">
@@ -124,6 +213,7 @@ export function DecisionDetailView({ result }: DecisionDetailViewProps) {
           {
             decisionId: visibleResult.decision.id,
             status: newestStatus,
+            isStalled: visibleResult.newestAnalysis?.isStalled,
           },
         ]}
         onStatusChange={handleStatusChange}
@@ -143,7 +233,10 @@ export function DecisionDetailView({ result }: DecisionDetailViewProps) {
               {visibleResult.decision.decision}
             </h1>
             {visibleResult.newestAnalysis ? (
-              <AnalysisStatusBadge status={visibleResult.newestAnalysis.status} />
+              <AnalysisStatusBadge
+                status={visibleResult.newestAnalysis.status}
+                isStalled={visibleResult.newestAnalysis.isStalled}
+              />
             ) : null}
           </div>
         </header>
@@ -163,12 +256,65 @@ export function DecisionDetailView({ result }: DecisionDetailViewProps) {
             {newestStatus === "ready" ? null : (
               <AnalysisStateMessage
                 status={newestStatus}
+                isStalled={visibleResult.newestAnalysis?.isStalled}
                 failureReason={visibleResult.newestAnalysis?.failureReason}
                 hasReadyResult={Boolean(visibleResult.readyAnalysis)}
               />
             )}
-            {visibleResult.readyAnalysis ? (
-              <ReadyAnalysisSections analysis={visibleResult.readyAnalysis} />
+            <div className="flex flex-wrap items-center gap-2">
+              {showRetry ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => void runAnalysisAction("retry")}
+                  disabled={pendingAction !== null}
+                >
+                  <RotateCcw aria-hidden="true" />
+                  {pendingAction === "retry" ? t("retryPending") : t("retryAnalysis")}
+                </Button>
+              ) : null}
+              {showReanalysis ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void runAnalysisAction("reanalyze")}
+                  disabled={pendingAction !== null}
+                >
+                  <RefreshCw aria-hidden="true" />
+                  {pendingAction === "reanalyze" ? t("reanalyzePending") : t("reanalyze")}
+                </Button>
+              ) : null}
+              {activeProcessing ? (
+                <Button type="button" size="sm" variant="outline" disabled>
+                  <RefreshCw aria-hidden="true" />
+                  {t("alreadyProcessing")}
+                </Button>
+              ) : null}
+            </div>
+            {actionError ? (
+              <p className="text-destructive text-sm" role="status">
+                {actionError}
+              </p>
+            ) : null}
+            {readyAnalyses.length > 1 ? (
+              <label className="grid max-w-xs gap-2 text-sm font-medium">
+                {t("versionSwitcherLabel")}
+                <select
+                  className="border-input bg-background focus-visible:ring-ring h-9 rounded-md border px-3 text-sm outline-none focus-visible:ring-[3px]"
+                  value={selectedReadyAnalysis?.analysisId ?? ""}
+                  onChange={(event) => setSelectedAnalysisId(event.target.value)}
+                >
+                  {readyAnalyses.map((analysis) => (
+                    <option key={analysis.analysisId} value={analysis.analysisId}>
+                      {t("versionOption", { version: analysis.version })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {selectedReadyAnalysis ? (
+              <ReadyAnalysisSections analysis={selectedReadyAnalysis} />
             ) : null}
           </section>
         </div>

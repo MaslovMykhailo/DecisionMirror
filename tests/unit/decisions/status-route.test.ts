@@ -28,6 +28,7 @@ describe("decision analysis status route", () => {
     const GET = createDecisionStatusGetHandler({
       getUser: async () => ({ authenticated: true, userId: "user_1" }),
       db,
+      now: () => updatedAt,
     });
 
     const response = await GET(createRequest(), createContext());
@@ -38,6 +39,8 @@ describe("decision analysis status route", () => {
       version: 2,
       status: "processing",
       updatedAt: updatedAt.toISOString(),
+      isStalled: false,
+      retryable: false,
     });
     expect(db.analysis.findFirst).toHaveBeenCalledWith({
       where: { decisionId: "decision_1", decision: { userId: "user_1" } },
@@ -104,7 +107,45 @@ describe("decision analysis status route", () => {
       version: 3,
       status: "failed",
       updatedAt: updatedAt.toISOString(),
+      isStalled: false,
+      retryable: true,
       failureReason: "The structured analysis output did not match the contract.",
     });
+  });
+
+  it("returns stalled retryability metadata for stale processing analyses", async () => {
+    const staleUpdatedAt = new Date("2026-05-30T11:49:59.000Z");
+    const db = {
+      analysis: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "analysis_stalled",
+          version: 4,
+          status: "processing",
+          updatedAt: staleUpdatedAt,
+          failureReason: null,
+        }),
+      },
+    };
+    const GET = createDecisionStatusGetHandler({
+      getUser: async () => ({ authenticated: true, userId: "user_1" }),
+      db,
+      now: () => updatedAt,
+      stalledTimeoutMs: 10 * 60 * 1000,
+    });
+
+    const response = await GET(createRequest(), createContext());
+
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload).toEqual({
+      analysisId: "analysis_stalled",
+      version: 4,
+      status: "processing",
+      updatedAt: staleUpdatedAt.toISOString(),
+      isStalled: true,
+      retryable: true,
+    });
+    expect(JSON.stringify(payload)).not.toContain("Choosing between");
+    expect(JSON.stringify(payload)).not.toContain("Accept the offer");
   });
 });

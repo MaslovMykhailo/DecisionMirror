@@ -87,6 +87,14 @@
     "premortemRisks": "Premortem risks",
     "keyAssumptions": "Key assumptions",
     "warningSigns": "Warning signs",
+    "versionSwitcherLabel": "Analysis version",
+    "versionOption": "Version {version}",
+    "retryAnalysis": "Retry analysis",
+    "reanalyze": "Run re-analysis",
+    "retryPending": "Retrying analysis",
+    "reanalyzePending": "Starting re-analysis",
+    "actionError": "We could not update this analysis.",
+    "alreadyProcessing": "Analysis is already processing.",
     "notFoundTitle": "Decision not found",
     "notFoundDescription": "This decision is unavailable or belongs to another user."
   },
@@ -101,9 +109,12 @@
     "status": {
       "processing": "Processing",
       "ready": "Ready",
-      "failed": "Failed"
+      "failed": "Failed",
+      "stalled": "Stalled"
     },
     "processing": "Analysis is still processing.",
+    "stalled": "Analysis stalled. You can retry it from the detail view.",
+    "stalledWithReady": "Analysis stalled. The latest ready result is shown below.",
     "newerProcessing": "A newer analysis is still processing. The latest ready result is shown below.",
     "notReady": "Analysis is not ready yet.",
     "failed": "Analysis failed. You can try again later.",

@@ -6,6 +6,8 @@ type StatusDeps = Parameters<typeof getDecisionAnalysisStatus>[1];
 type DecisionStatusGetDeps = {
   getUser: () => Promise<AuthenticatedUserIdResult>;
   db?: StatusDeps["db"];
+  now?: StatusDeps["now"];
+  stalledTimeoutMs?: StatusDeps["stalledTimeoutMs"];
 };
 
 type DecisionStatusContext = {
@@ -21,6 +23,8 @@ export function createDecisionStatusGetHandler(deps: DecisionStatusGetDeps) {
     const result = await getDecisionAnalysisStatus(decisionId, {
       getUser: deps.getUser,
       db: deps.db,
+      now: deps.now,
+      stalledTimeoutMs: deps.stalledTimeoutMs,
     });
 
     if (result.status === "unauthenticated") {

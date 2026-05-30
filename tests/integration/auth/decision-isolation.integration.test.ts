@@ -93,6 +93,119 @@ describeDb("authenticated decision isolation (integration)", () => {
     });
   });
 
+  it("retries an owned failed analysis in place with provider execution stubbed", async () => {
+    const triggerAnalysis = vi.fn();
+    const retryNow = new Date("2026-05-30T12:00:00.000Z");
+    const decision = await prisma.decision.create({
+      data: { userId: userA, situation: "Own retry situation", decision: "Retry analysis" },
+    });
+    const analysis = await prisma.analysis.create({
+      data: {
+        decisionId: decision.id,
+        version: 1,
+        status: "failed",
+        locale: "uk",
+        failureReason: "Provider contract failed.",
+      },
+    });
+
+    const result = await service.retryDecisionAnalysis(decision.id, {
+      getUser: asUserA,
+      triggerAnalysis,
+      now: () => retryNow,
+    });
+
+    expect(result.status).toBe("success");
+    expect(triggerAnalysis).toHaveBeenCalledWith(decision.id);
+    await expect(prisma.analysis.findUnique({ where: { id: analysis.id } })).resolves.toMatchObject(
+      {
+        version: 1,
+        status: "processing",
+        locale: "uk",
+        failureReason: null,
+      },
+    );
+  });
+
+  it("appends owned re-analysis versions while preserving prior ready output", async () => {
+    const triggerAnalysis = vi.fn();
+    const reanalysisNow = new Date("2026-05-30T12:10:00.000Z");
+    const decision = await prisma.decision.create({
+      data: {
+        userId: userA,
+        situation: "Own re-analysis situation",
+        decision: "Run another analysis",
+      },
+    });
+    const readyAnalysis = await prisma.analysis.create({
+      data: {
+        decisionId: decision.id,
+        version: 1,
+        status: "ready",
+        locale: "en",
+        category: validAnalysisOutput.category,
+        biases: validAnalysisOutput.biases,
+        missedAlternatives: validAnalysisOutput.missedAlternatives,
+        premortemRisks: validAnalysisOutput.premortemRisks,
+        keyAssumptions: validAnalysisOutput.keyAssumptions,
+        warningSigns: validAnalysisOutput.warningSigns,
+      },
+    });
+
+    const result = await service.reanalyzeDecision(decision.id, {
+      getUser: asUserA,
+      triggerAnalysis,
+      locale: "uk",
+      now: () => reanalysisNow,
+    });
+
+    expect(result.status).toBe("success");
+    expect(triggerAnalysis).toHaveBeenCalledWith(decision.id);
+    const analyses = await prisma.analysis.findMany({
+      where: { decisionId: decision.id },
+      orderBy: { version: "asc" },
+    });
+    expect(analyses).toHaveLength(2);
+    expect(analyses[0]).toMatchObject({
+      id: readyAnalysis.id,
+      version: 1,
+      status: "ready",
+      locale: "en",
+    });
+    expect(analyses[1]).toMatchObject({
+      version: 2,
+      status: "processing",
+      locale: "uk",
+    });
+  });
+
+  it("blocks owned re-analysis while the newest analysis is active processing", async () => {
+    const triggerAnalysis = vi.fn();
+    const now = new Date("2026-05-30T12:30:00.000Z");
+    const decision = await prisma.decision.create({
+      data: { userId: userA, situation: "Active processing", decision: "Wait" },
+    });
+    await prisma.analysis.create({
+      data: {
+        decisionId: decision.id,
+        version: 1,
+        status: "processing",
+        updatedAt: new Date("2026-05-30T12:29:00.000Z"),
+      },
+    });
+
+    await expect(
+      service.reanalyzeDecision(decision.id, {
+        getUser: asUserA,
+        triggerAnalysis,
+        now: () => now,
+      }),
+    ).resolves.toEqual({ status: "already_processing" });
+
+    await expect(prisma.analysis.count({ where: { decisionId: decision.id } })).resolves.toBe(1);
+    expect(triggerAnalysis).not.toHaveBeenCalled();
+  });
+
   it("excludes other users from history list and detail read models", async () => {
     const ownDecision = await prisma.decision.create({
       data: {

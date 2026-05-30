@@ -1,4 +1,8 @@
 import type { AuthenticatedUserIdResult } from "@/lib/auth/session";
+import {
+  analysisRetryability,
+  type AnalysisRetryabilityOptions,
+} from "@/lib/decisions/analysis-retryability";
 
 type GetUser = () => Promise<AuthenticatedUserIdResult>;
 
@@ -22,7 +26,7 @@ type ResolvedAnalysisStatusDb = {
   };
 };
 
-type StatusDeps = {
+type StatusDeps = AnalysisRetryabilityOptions & {
   getUser: GetUser;
   db?: AnalysisStatusDb;
 };
@@ -62,6 +66,7 @@ export async function getDecisionAnalysisStatus(decisionId: string, deps: Status
       version: analysis.version,
       status: analysis.status,
       updatedAt: analysis.updatedAt.toISOString(),
+      ...analysisRetryability(analysis, deps),
       ...(analysis.status === "failed" && analysis.failureReason
         ? { failureReason: analysis.failureReason }
         : {}),

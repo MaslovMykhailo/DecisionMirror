@@ -8,6 +8,7 @@ import { useRouter } from "@/lib/i18n/navigation";
 type VisibleDecisionStatus = {
   decisionId: string;
   status: AnalysisStatus | null;
+  isStalled?: boolean;
 };
 
 export type DecisionStatusUpdate = {
@@ -16,6 +17,8 @@ export type DecisionStatusUpdate = {
   version: number;
   status: AnalysisStatus;
   updatedAt: string;
+  isStalled: boolean;
+  retryable: boolean;
   failureReason?: string;
 };
 
@@ -40,7 +43,9 @@ function parseStatusPayload(payload: unknown): StatusPayload | null {
     typeof data.analysisId !== "string" ||
     typeof data.version !== "number" ||
     !isAnalysisStatus(data.status) ||
-    typeof data.updatedAt !== "string"
+    typeof data.updatedAt !== "string" ||
+    typeof data.isStalled !== "boolean" ||
+    typeof data.retryable !== "boolean"
   ) {
     return null;
   }
@@ -50,13 +55,15 @@ function parseStatusPayload(payload: unknown): StatusPayload | null {
     version: data.version,
     status: data.status,
     updatedAt: data.updatedAt,
+    isStalled: data.isStalled,
+    retryable: data.retryable,
     ...(typeof data.failureReason === "string" ? { failureReason: data.failureReason } : {}),
   };
 }
 
 function processingDecisionIds(decisions: VisibleDecisionStatus[]) {
   return decisions
-    .filter((decision) => decision.status === "processing")
+    .filter((decision) => decision.status === "processing" && !decision.isStalled)
     .map((decision) => decision.decisionId)
     .sort();
 }
@@ -107,6 +114,8 @@ export function DecisionStatusPoller({
         }
 
         if (payload.status === "failed") return;
+
+        if (payload.status === "processing" && payload.isStalled) return;
 
         schedule(decisionId, Math.min(currentDelayMs * 2, maxDelayMs));
       } catch {

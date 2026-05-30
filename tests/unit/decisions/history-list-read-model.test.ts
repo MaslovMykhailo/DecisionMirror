@@ -91,7 +91,11 @@ describe("decision history list read model", () => {
     };
 
     await expect(
-      getDecisionHistoryList({ getUser: async () => authenticated, db }),
+      getDecisionHistoryList({
+        getUser: async () => authenticated,
+        db,
+        now: () => updatedAt,
+      }),
     ).resolves.toEqual({
       status: "success",
       decisions: [
@@ -105,10 +109,58 @@ describe("decision history list read model", () => {
             version: 2,
             status: "processing",
             updatedAt: updatedAt.toISOString(),
+            isStalled: false,
+            retryable: false,
           },
           newestReadyCategory: "career",
         },
       ],
+    });
+  });
+
+  it("marks stale processing list rows as stalled and retryable", async () => {
+    const staleUpdatedAt = new Date("2026-05-30T11:49:59.000Z");
+    const db = {
+      decision: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "decision_1",
+            situation: "  Choosing between a stable role and a startup  ",
+            decision: "  Accept the startup offer.  ",
+            reasoning: null,
+            createdAt,
+            updatedAt,
+            analyses: [
+              {
+                id: "analysis_stalled",
+                version: 2,
+                status: "processing",
+                category: null,
+                failureReason: null,
+                updatedAt: staleUpdatedAt,
+              },
+            ],
+          },
+        ]),
+      },
+    };
+
+    const result = await getDecisionHistoryList({
+      getUser: async () => authenticated,
+      db,
+      now: () => updatedAt,
+      stalledTimeoutMs: 10 * 60 * 1000,
+    });
+
+    expect(result.status).toBe("success");
+    if (result.status !== "success") return;
+    expect(result.decisions[0]?.newestAnalysis).toEqual({
+      analysisId: "analysis_stalled",
+      version: 2,
+      status: "processing",
+      updatedAt: staleUpdatedAt.toISOString(),
+      isStalled: true,
+      retryable: true,
     });
   });
 });

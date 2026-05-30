@@ -10,7 +10,16 @@ const messages = {
       processing: "Processing",
       ready: "Ready",
       failed: "Failed",
+      stalled: "Stalled",
     },
+    processing: "Analysis is still processing.",
+    stalled: "Analysis stalled. You can retry it.",
+    stalledWithReady: "Analysis stalled. The latest ready result is shown below.",
+    newerProcessing:
+      "A newer analysis is still processing. The latest ready result is shown below.",
+    notReady: "Analysis is not ready yet.",
+    failed: "Analysis failed. You can try again later.",
+    failedWithReason: "Analysis failed: {reason}",
   },
 };
 
@@ -38,6 +47,16 @@ describe("analysis status presentation", () => {
     expect(badge).toBeDefined();
     expect(badge.closest("[data-analysis-status]")?.getAttribute("data-analysis-status")).toBe(
       status,
+    );
+  });
+
+  it("renders stalled processing with a distinct badge label", () => {
+    renderWithIntl(<AnalysisStatusBadge status="processing" isStalled />);
+
+    const badge = screen.getByText("Stalled");
+    expect(badge).toBeDefined();
+    expect(badge.closest("[data-analysis-status]")?.getAttribute("data-analysis-status")).toBe(
+      "stalled",
     );
   });
 });

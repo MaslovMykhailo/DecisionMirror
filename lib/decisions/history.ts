@@ -1,5 +1,9 @@
 import { analysisOutputSchema, type AnalysisOutput } from "@/agent/schema";
 import type { AuthenticatedUserIdResult } from "@/lib/auth/session";
+import {
+  analysisRetryability,
+  type AnalysisRetryabilityOptions,
+} from "@/lib/decisions/analysis-retryability";
 import { categorySchema, type DecisionCategory } from "@/lib/taxonomy";
 
 export type AnalysisStatus = "processing" | "ready" | "failed";
@@ -51,7 +55,7 @@ type ResolvedDecisionHistoryDb = {
   };
 };
 
-type DecisionHistoryDeps = {
+type DecisionHistoryDeps = AnalysisRetryabilityOptions & {
   getUser: GetUser;
   db?: DecisionHistoryDb;
 };
@@ -61,6 +65,8 @@ export type DecisionHistoryAnalysisSummary = {
   version: number;
   status: AnalysisStatus;
   updatedAt: string;
+  isStalled: boolean;
+  retryable: boolean;
   failureReason?: string;
 };
 
@@ -97,6 +103,7 @@ export type DecisionHistoryDetailResult =
       decision: DecisionHistoryDetail;
       newestAnalysis: DecisionHistoryAnalysisSummary | null;
       readyAnalysis: DecisionHistoryReadyAnalysis | null;
+      readyAnalyses: DecisionHistoryReadyAnalysis[];
     };
 
 async function defaultDb(): Promise<ResolvedDecisionHistoryDb> {
@@ -118,7 +125,10 @@ function summaryFromDecision(row: Pick<DecisionHistoryRow, "decision" | "situati
   return singleLine.length > 140 ? `${singleLine.slice(0, 137).trimEnd()}...` : singleLine;
 }
 
-function analysisSummary(row: DecisionHistoryAnalysisRow | undefined) {
+function analysisSummary(
+  row: DecisionHistoryAnalysisRow | undefined,
+  options: AnalysisRetryabilityOptions,
+) {
   if (!row || !isAnalysisStatus(row.status)) return null;
 
   return {
@@ -126,6 +136,7 @@ function analysisSummary(row: DecisionHistoryAnalysisRow | undefined) {
     version: row.version,
     status: row.status,
     updatedAt: row.updatedAt.toISOString(),
+    ...analysisRetryability(row, options),
     ...(row.status === "failed" && row.failureReason ? { failureReason: row.failureReason } : {}),
   };
 }
@@ -158,7 +169,18 @@ function readyAnalysis(row: DecisionHistoryDetailAnalysisRow | undefined) {
   } satisfies DecisionHistoryReadyAnalysis;
 }
 
-export async function getDecisionHistoryList({ getUser, db }: DecisionHistoryDeps) {
+function readyAnalyses(rows: DecisionHistoryDetailAnalysisRow[]) {
+  return rows
+    .map((analysis) => readyAnalysis(analysis))
+    .filter((analysis): analysis is DecisionHistoryReadyAnalysis => Boolean(analysis));
+}
+
+export async function getDecisionHistoryList({
+  getUser,
+  db,
+  now,
+  stalledTimeoutMs,
+}: DecisionHistoryDeps) {
   const user = await getUser();
   if (!user.authenticated) return { status: "unauthenticated" as const };
 
@@ -194,7 +216,7 @@ export async function getDecisionHistoryList({ getUser, db }: DecisionHistoryDep
       summary: summaryFromDecision(decision),
       createdAt: decision.createdAt.toISOString(),
       updatedAt: decision.updatedAt.toISOString(),
-      newestAnalysis: analysisSummary(decision.analyses[0]),
+      newestAnalysis: analysisSummary(decision.analyses[0], { now, stalledTimeoutMs }),
       newestReadyCategory: newestReadyCategory(decision.analyses),
     })),
   };
@@ -202,7 +224,7 @@ export async function getDecisionHistoryList({ getUser, db }: DecisionHistoryDep
 
 export async function getDecisionHistoryDetail(
   decisionId: string,
-  { getUser, db }: DecisionHistoryDeps,
+  { getUser, db, now, stalledTimeoutMs }: DecisionHistoryDeps,
 ): Promise<DecisionHistoryDetailResult> {
   const user = await getUser();
   if (!user.authenticated) return { status: "unauthenticated" as const };
@@ -238,6 +260,8 @@ export async function getDecisionHistoryDetail(
 
   if (!decision) return { status: "not_found" as const };
 
+  const completedAnalyses = readyAnalyses(decision.analyses);
+
   return {
     status: "success" as const,
     decision: {
@@ -248,7 +272,8 @@ export async function getDecisionHistoryDetail(
       createdAt: decision.createdAt.toISOString(),
       updatedAt: decision.updatedAt.toISOString(),
     } satisfies DecisionHistoryDetail,
-    newestAnalysis: analysisSummary(decision.analyses[0]),
-    readyAnalysis: readyAnalysis(decision.analyses.find((analysis) => analysis.status === "ready")),
+    newestAnalysis: analysisSummary(decision.analyses[0], { now, stalledTimeoutMs }),
+    readyAnalysis: completedAnalyses[0] ?? null,
+    readyAnalyses: completedAnalyses,
   };
 }

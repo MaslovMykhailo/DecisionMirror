@@ -28,8 +28,11 @@ const messages = {
       processing: "Processing",
       ready: "Ready",
       failed: "Failed",
+      stalled: "Stalled",
     },
     processing: "Analysis is still processing.",
+    stalled: "Analysis stalled. You can retry it from the detail view.",
+    stalledWithReady: "Analysis stalled. The latest ready result is shown below.",
     newerProcessing:
       "A newer analysis is still processing. The latest ready result is shown below.",
     notReady: "Analysis is not ready yet.",
@@ -69,6 +72,8 @@ function historyItem(overrides: Partial<DecisionHistoryItem> = {}): DecisionHist
       version: 1,
       status: "ready",
       updatedAt: "2026-05-30T12:05:00.000Z",
+      isStalled: false,
+      retryable: false,
     },
     newestReadyCategory: "career",
     ...overrides,
@@ -96,6 +101,8 @@ describe("decision history list", () => {
               version: 1,
               status: "processing",
               updatedAt: "2026-05-30T12:10:00.000Z",
+              isStalled: false,
+              retryable: false,
             },
             newestReadyCategory: null,
           }),
@@ -107,6 +114,8 @@ describe("decision history list", () => {
               version: 1,
               status: "failed",
               updatedAt: "2026-05-30T12:15:00.000Z",
+              isStalled: false,
+              retryable: true,
               failureReason: "The structured output did not match the contract.",
             },
             newestReadyCategory: null,
@@ -137,5 +146,36 @@ describe("decision history list", () => {
       screen.getByText("Saved decisions will appear here after you capture them."),
     ).toBeDefined();
     expect(screen.queryByText("Accept the startup offer")).toBeNull();
+  });
+
+  it("shows stalled retryable state without polling or telemetry payloads", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderWithIntl(
+      <DecisionHistoryList
+        decisions={[
+          historyItem({
+            id: "decision_stalled",
+            summary: "Move private decision text",
+            newestAnalysis: {
+              analysisId: "analysis_stalled",
+              version: 2,
+              status: "processing",
+              updatedAt: "2026-05-30T11:30:00.000Z",
+              isStalled: true,
+              retryable: true,
+            },
+            newestReadyCategory: null,
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Stalled")).toBeDefined();
+    expect(
+      screen.getByText("Analysis stalled. You can retry it from the detail view."),
+    ).toBeDefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

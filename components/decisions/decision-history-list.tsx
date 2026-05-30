@@ -35,6 +35,8 @@ export function DecisionHistoryList({ decisions }: DecisionHistoryListProps) {
             version: update.version,
             status: update.status,
             updatedAt: update.updatedAt,
+            isStalled: update.isStalled,
+            retryable: update.retryable,
             ...(update.failureReason ? { failureReason: update.failureReason } : {}),
           },
         }
@@ -47,6 +49,7 @@ export function DecisionHistoryList({ decisions }: DecisionHistoryListProps) {
         decisions={visibleDecisions.map((decision) => ({
           decisionId: decision.id,
           status: decision.newestAnalysis?.status ?? null,
+          isStalled: decision.newestAnalysis?.isStalled,
         }))}
         onStatusChange={handleStatusChange}
       />
@@ -86,7 +89,10 @@ export function DecisionHistoryList({ decisions }: DecisionHistoryListProps) {
 
                   <div className="flex shrink-0 items-center gap-2">
                     {decision.newestAnalysis ? (
-                      <AnalysisStatusBadge status={decision.newestAnalysis.status} />
+                      <AnalysisStatusBadge
+                        status={decision.newestAnalysis.status}
+                        isStalled={decision.newestAnalysis.isStalled}
+                      />
                     ) : null}
                     <ArrowRight aria-hidden="true" className="text-muted-foreground size-4" />
                   </div>
@@ -95,6 +101,7 @@ export function DecisionHistoryList({ decisions }: DecisionHistoryListProps) {
                 {decision.newestAnalysis?.status === "ready" ? null : (
                   <AnalysisStateMessage
                     status={decision.newestAnalysis?.status ?? null}
+                    isStalled={decision.newestAnalysis?.isStalled}
                     failureReason={decision.newestAnalysis?.failureReason}
                     hasReadyResult={Boolean(decision.newestReadyCategory)}
                   />

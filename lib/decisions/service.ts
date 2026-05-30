@@ -1,8 +1,19 @@
 import type { AuthenticatedUserIdResult } from "@/lib/auth/session";
+import {
+  analysisRetryability,
+  type AnalysisRetryabilityOptions,
+} from "@/lib/decisions/analysis-retryability";
 import { createDecisionInputSchema } from "@/lib/decisions/validation";
 import { routing, type Locale } from "@/lib/i18n/routing";
 
 type GetUser = () => Promise<AuthenticatedUserIdResult>;
+
+type AnalysisMutationRow = {
+  id: string;
+  version: number;
+  status: string;
+  updatedAt: Date;
+};
 
 type DecisionDb = {
   decision?: {
@@ -11,11 +22,12 @@ type DecisionDb = {
   };
   analysis?: {
     create?: (args: unknown) => Promise<{ id: string }>;
-    findFirst?: (args: unknown) => Promise<{ id: string } | null>;
-    update?: (args: unknown) => Promise<{ id: string }>;
+    findFirst?: (args: unknown) => Promise<AnalysisMutationRow | null>;
+    update?: (args: unknown) => Promise<AnalysisMutationRow>;
     aggregate?: (args: unknown) => Promise<{ _max: { version: number | null } }>;
     findMany?: (args: unknown) => Promise<Array<{ category: string | null }>>;
   };
+  $transaction?: <T>(fn: (tx: ResolvedDecisionDb) => Promise<T>) => Promise<T>;
 };
 
 type ResolvedDecisionDb = {
@@ -24,12 +36,13 @@ type ResolvedDecisionDb = {
     findFirst: (args: unknown) => Promise<unknown>;
   };
   analysis: {
-    create: (args: unknown) => Promise<{ id: string }>;
-    findFirst: (args: unknown) => Promise<{ id: string } | null>;
-    update: (args: unknown) => Promise<{ id: string }>;
+    create: (args: unknown) => Promise<AnalysisMutationRow>;
+    findFirst: (args: unknown) => Promise<AnalysisMutationRow | null>;
+    update: (args: unknown) => Promise<AnalysisMutationRow>;
     aggregate: (args: unknown) => Promise<{ _max: { version: number | null } }>;
     findMany: (args: unknown) => Promise<Array<{ category: string | null }>>;
   };
+  $transaction?: <T>(fn: (tx: ResolvedDecisionDb) => Promise<T>) => Promise<T>;
 };
 
 type MemoryStore = {
@@ -41,10 +54,11 @@ type BaseDeps = {
   db?: DecisionDb;
 };
 
-type AnalysisMutationDeps = BaseDeps & {
-  triggerAnalysis?: (decisionId: string) => void | Promise<void>;
-  locale?: Locale;
-};
+type AnalysisMutationDeps = BaseDeps &
+  AnalysisRetryabilityOptions & {
+    triggerAnalysis?: (decisionId: string) => void | Promise<void>;
+    locale?: Locale;
+  };
 
 type MemoryDeps = {
   getUser: GetUser;
@@ -60,8 +74,41 @@ async function resolveDb(db?: DecisionDb): Promise<ResolvedDecisionDb> {
   return (db ?? (await defaultDb())) as unknown as ResolvedDecisionDb;
 }
 
+async function withTransaction<T>(
+  db: ResolvedDecisionDb,
+  fn: (tx: ResolvedDecisionDb) => Promise<T>,
+) {
+  return db.$transaction ? db.$transaction((tx) => fn(tx)) : fn(db);
+}
+
 function unauthenticatedResult() {
   return { status: "unauthenticated" as const };
+}
+
+function operationNow(deps: AnalysisRetryabilityOptions) {
+  return deps.now?.() ?? new Date();
+}
+
+function mutationAnalysisPayload(
+  analysis: AnalysisMutationRow,
+  options: AnalysisRetryabilityOptions,
+) {
+  return {
+    analysisId: analysis.id,
+    version: analysis.version,
+    status: analysis.status,
+    updatedAt: analysis.updatedAt.toISOString(),
+    ...analysisRetryability(analysis, options),
+  };
+}
+
+function isUniqueConstraintError(error: unknown) {
+  return Boolean(
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002",
+  );
 }
 
 async function requireDecisionOwner(decisionId: string, { getUser, db }: BaseDeps) {
@@ -135,23 +182,39 @@ export async function retryDecisionAnalysis(decisionId: string, deps: AnalysisMu
   if (!user.authenticated) return unauthenticatedResult();
   if (!decision) return { status: "not_found" as const };
 
-  const latestRetryable = await db.analysis.findFirst({
-    where: { decisionId, status: { in: ["failed", "processing"] } },
+  const latestAnalysis = await db.analysis.findFirst({
+    where: { decisionId },
     orderBy: { version: "desc" },
-    select: { id: true },
+    select: { id: true, version: true, status: true, updatedAt: true },
   });
 
-  if (!latestRetryable) return { status: "not_found" as const };
+  if (!latestAnalysis) return { status: "not_found" as const };
 
+  const retryability = analysisRetryability(latestAnalysis, deps);
+  if (latestAnalysis.status === "processing" && !retryability.isStalled) {
+    return { status: "already_processing" as const };
+  }
+
+  if (!retryability.retryable) {
+    return { status: "not_retryable" as const };
+  }
+
+  const updatedAt = operationNow(deps);
   const analysis = await db.analysis.update({
-    where: { id: latestRetryable.id },
-    data: { status: "processing", failureReason: null },
-    select: { id: true },
+    where: { id: latestAnalysis.id },
+    data: { status: "processing", failureReason: null, updatedAt },
+    select: { id: true, version: true, status: true, updatedAt: true },
   });
 
   await deps.triggerAnalysis?.(decisionId);
 
-  return { status: "success" as const, analysisId: analysis.id };
+  return {
+    status: "success" as const,
+    analysis: mutationAnalysisPayload(analysis, {
+      now: () => updatedAt,
+      stalledTimeoutMs: deps.stalledTimeoutMs,
+    }),
+  };
 }
 
 export async function reanalyzeDecision(decisionId: string, deps: AnalysisMutationDeps) {
@@ -159,24 +222,58 @@ export async function reanalyzeDecision(decisionId: string, deps: AnalysisMutati
   if (!user.authenticated) return unauthenticatedResult();
   if (!decision) return { status: "not_found" as const };
 
-  const versionAggregate = await db.analysis.aggregate({
-    where: { decisionId },
-    _max: { version: true },
-  });
-  const nextVersion = (versionAggregate._max.version ?? 0) + 1;
-  const analysis = await db.analysis.create({
-    data: {
-      decisionId,
-      version: nextVersion,
-      status: "processing",
-      locale: deps.locale ?? routing.defaultLocale,
-    },
-    select: { id: true },
-  });
+  try {
+    const result = await withTransaction(db, async (tx) => {
+      const latestAnalysis = await tx.analysis.findFirst({
+        where: { decisionId },
+        orderBy: { version: "desc" },
+        select: { id: true, version: true, status: true, updatedAt: true },
+      });
 
-  await deps.triggerAnalysis?.(decisionId);
+      if (
+        latestAnalysis?.status === "processing" &&
+        !analysisRetryability(latestAnalysis, deps).isStalled
+      ) {
+        return { status: "already_processing" as const };
+      }
 
-  return { status: "success" as const, analysisId: analysis.id, version: nextVersion };
+      const versionAggregate = await tx.analysis.aggregate({
+        where: { decisionId },
+        _max: { version: true },
+      });
+      const nextVersion = (versionAggregate._max.version ?? 0) + 1;
+      const updatedAt = operationNow(deps);
+      const analysis = await tx.analysis.create({
+        data: {
+          decisionId,
+          version: nextVersion,
+          status: "processing",
+          locale: deps.locale ?? routing.defaultLocale,
+          updatedAt,
+        },
+        select: { id: true, version: true, status: true, updatedAt: true },
+      });
+
+      return {
+        status: "success" as const,
+        analysis: mutationAnalysisPayload(analysis, {
+          now: () => updatedAt,
+          stalledTimeoutMs: deps.stalledTimeoutMs,
+        }),
+      };
+    });
+
+    if (result.status === "success") {
+      await deps.triggerAnalysis?.(decisionId);
+    }
+
+    return result;
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return { status: "already_processing" as const };
+    }
+    throw error;
+  }
 }
 
 export async function getDashboardAggregation({ getUser, db }: BaseDeps) {

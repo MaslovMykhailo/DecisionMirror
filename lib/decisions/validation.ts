@@ -19,3 +19,9 @@ export const createDecisionInputSchema = z.object({
 
 export type CreateDecisionInput = z.input<typeof createDecisionInputSchema>;
 export type CreateDecisionData = z.output<typeof createDecisionInputSchema>;
+
+export const reanalyzeDecisionInputSchema = z
+  .object({
+    locale: z.enum(routing.locales, { error: "locale_unsupported" }).default(routing.defaultLocale),
+  })
+  .default({ locale: routing.defaultLocale });
