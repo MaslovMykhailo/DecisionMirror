@@ -130,10 +130,10 @@ test.describe("decision history", () => {
     await page.goto("/en/decisions");
 
     await expect(page.getByText("Wait before moving cities")).toBeVisible();
-    await expect(page.getByText("Processing")).toBeVisible();
+    await expect(page.getByText("Processing", { exact: true })).toBeVisible();
     await expect(page.getByText("Analysis is still processing.")).toBeVisible();
     await expect(page.getByText("Refinance the mortgage")).toBeVisible();
-    await expect(page.getByText("Failed")).toBeVisible();
+    await expect(page.getByText("Failed", { exact: true })).toBeVisible();
     await expect(
       page.getByText("Analysis failed: The structured output did not match the contract."),
     ).toBeVisible();

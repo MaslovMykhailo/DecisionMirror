@@ -1,0 +1,92 @@
+name: Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+env:
+  AUTH_SECRET: test-auth-secret-at-least-32-characters
+  AUTH_GOOGLE_ID: test-google-id
+  AUTH_GOOGLE_SECRET: test-google-secret
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/decision_mirror_ci
+  OPENAI_API_KEY: test-openai-key
+  OPENAI_MODEL: gpt-5-mini
+  AGENT_EMBEDDINGS_PROVIDER: openai
+  OPENAI_EMBEDDINGS_MODEL: text-embedding-3-small
+  VOYAGE_API_KEY: test-voyage-key
+  NEXT_PUBLIC_SENTRY_DSN: ""
+  POSTHOG_KEY: ""
+  NEXT_PUBLIC_POSTHOG_KEY: ""
+  LANGSMITH_API_KEY: ""
+  LANGSMITH_TRACING: "false"
+
+jobs:
+  quality:
+    name: Lint, test, build, and e2e
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: decision_mirror_ci
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and component tests
+        run: pnpm test
+
+      - name: Apply database migrations
+        run: pnpm db:migrate:deploy
+
+      - name: Initialize LangGraph checkpointer
+        run: pnpm db:setup-checkpointer
+
+      - name: Integration tests
+        run: pnpm test:integration
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Playwright e2e
+        run: pnpm test:e2e

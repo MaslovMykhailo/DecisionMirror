@@ -2,6 +2,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { validAnalysisOutput } from "@/tests/support/fixtures/analysis-output";
 
+vi.mock("server-only", () => ({}));
+
 const describeDb = process.env.DATABASE_URL ? describe : describe.skip;
 
 describeDb("authenticated decision isolation (integration)", () => {

@@ -45,10 +45,8 @@ export type SentryInitOptions = {
  * Build the options passed to `Sentry.init` in every runtime. When no DSN is
  * configured the SDK is disabled, so local and test runs neither send events nor throw.
  */
-export function sentryInitOptions(
-  env: Record<string, string | undefined> = process.env,
-): SentryInitOptions {
-  const dsn = env.NEXT_PUBLIC_SENTRY_DSN || undefined;
+export function sentryInitOptions(env?: Record<string, string | undefined>): SentryInitOptions {
+  const dsn = env?.NEXT_PUBLIC_SENTRY_DSN ?? process.env.NEXT_PUBLIC_SENTRY_DSN ?? undefined;
   return {
     dsn,
     enabled: Boolean(dsn),
