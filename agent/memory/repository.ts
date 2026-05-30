@@ -106,7 +106,10 @@ export function createPgVectorMemoryRepository({
         topK,
       );
 
-      return formatPriorPatterns(rows, { currentDecisionId: decisionId, maxPatterns: topK });
+      return {
+        patterns: formatPriorPatterns(rows, { currentDecisionId: decisionId, maxPatterns: topK }),
+        recalledIds: rows.map((row) => row.id),
+      };
     },
 
     async remember({ analysis, analysisId, decisionId, decisionInput, userId }: RememberArgs) {

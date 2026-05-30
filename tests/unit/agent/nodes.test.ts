@@ -31,7 +31,10 @@ describe("agent nodes", () => {
       },
     };
     const memory = {
-      recall: vi.fn().mockResolvedValue(["You often choose quickly under workload pressure."]),
+      recall: vi.fn().mockResolvedValue({
+        patterns: ["You often choose quickly under workload pressure."],
+        recalledIds: ["mem_1"],
+      }),
       remember: vi.fn(),
     };
 

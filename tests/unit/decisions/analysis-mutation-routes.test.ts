@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+// The after() callback flushes server analytics, which lazily imports the server-only
+// PostHog module; stub server-only so it loads under jsdom.
+vi.mock("server-only", () => ({}));
+
 import {
   createDecisionAnalysisRetryPostHandler,
   createDecisionReanalysisPostHandler,

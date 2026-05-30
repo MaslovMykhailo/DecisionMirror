@@ -87,4 +87,38 @@ A user's analysis fails.
 ```
 
 Minimal, non-overlapping, and together they cover break / value / reasoning.
+
+---
+
+## Implementation status
+
+All three layers are **implemented** (change `observability`):
+
+- **Sentry** — `instrumentation.ts` / `instrumentation-client.ts` / `sentry.server.config.ts`
+  / `sentry.edge.config.ts`, wired through `lib/observability/sentry.ts` (central init +
+  `beforeSend` scrub + git-SHA release). `next.config.ts` is wrapped with `withSentryConfig`
+  for source-map upload (skipped with a warning when `SENTRY_AUTH_TOKEN` is absent). Agent
+  failures and stalled analyses are reported via `lib/observability/sentry-report.ts`.
+- **PostHog** — server (`lib/observability/posthog-server.ts`, flushed inside the
+  `after()` window) and client (`components/observability/posthog-provider.tsx`). The full
+  taxonomy is emitted through the typed `captureEvent` wrapper; dashboards are defined in
+  [`posthog/dashboards.md`](../posthog/dashboards.md).
+- **LangSmith** — env-driven auto-tracing gated by `lib/observability/langsmith.ts`;
+  recalled-memory ids and version attached to run metadata via the node `RunnableConfig`.
+
+The shared privacy guard `lib/observability/scrub.ts` (allowlist of ids/enums/status/counts/
+durations) backs all three sinks; `tests/unit/observability/no-prose-leak.test.ts` asserts no
+decision/analysis prose reaches any sink across the pipeline.
+
+### Resolved design questions
+
+- **Stalled-analysis timeout** — reuse the existing retryability threshold
+  (`DEFAULT_STALLED_ANALYSIS_TIMEOUT_MS`, 15 min in `lib/decisions/analysis-retryability.ts`);
+  no separate observability timeout. Detection lives in the status read path.
+- **`dashboard_viewed` scope** — emitted on the **analytics dashboard only** (not the
+  decision history page), matching the single taxonomy event.
+- **LangSmith retention + region** — project `decision-analysis`, **US** region (matching the
+  default PostHog host), **14-day** trace retention. Set in the LangSmith console; tracing is
+  kept out of cron/headless contexts by requiring `LANGSMITH_PROJECT` + key
+  (`langsmithTracingEnabled`).
 </content>

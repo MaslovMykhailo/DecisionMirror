@@ -78,7 +78,7 @@ describeDb("pgvector agent memory repository", () => {
         decisionId: current.decision.id,
         decisionInput: decisionInput("current"),
       }),
-    ).resolves.toEqual([]);
+    ).resolves.toEqual({ patterns: [], recalledIds: [] });
   });
 
   it("orders same-user recall by vector distance and respects top-k", async () => {
@@ -107,15 +107,16 @@ describeDb("pgvector agent memory repository", () => {
       analysis: validAnalysisOutput,
     });
 
-    const patterns = await repository.recall({
+    const recalled = await repository.recall({
       userId,
       decisionId: current.decision.id,
       decisionInput: decisionInput("current"),
     });
 
-    expect(patterns).toHaveLength(1);
-    expect(patterns[0]).toContain("Situation prior-close");
-    expect(patterns[0]).not.toContain("Situation prior-far");
+    expect(recalled.patterns).toHaveLength(1);
+    expect(recalled.patterns[0]).toContain("Situation prior-close");
+    expect(recalled.patterns[0]).not.toContain("Situation prior-far");
+    expect(recalled.recalledIds).toHaveLength(1);
   });
 
   it("upserts one current memory row per user and decision", async () => {
@@ -194,12 +195,13 @@ describeDb("pgvector agent memory repository", () => {
       analysis: validAnalysisOutput,
     });
 
-    const patterns = await repository.recall({
+    const recalled = await repository.recall({
       userId,
       decisionId: current.decision.id,
       decisionInput: decisionInput("current-isolated"),
     });
 
-    expect(patterns).toEqual([]);
+    expect(recalled.patterns).toEqual([]);
+    expect(recalled.recalledIds).toEqual([]);
   });
 });

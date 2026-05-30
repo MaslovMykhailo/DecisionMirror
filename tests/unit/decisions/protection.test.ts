@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+// The service emits analytics via captureEvent, which lazily imports the server-only
+// PostHog module; stub server-only so it loads under jsdom.
+vi.mock("server-only", () => ({}));
+
 import {
   createDecision,
   getDashboardAggregation,

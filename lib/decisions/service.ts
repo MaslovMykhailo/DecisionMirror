@@ -5,8 +5,10 @@ import {
 } from "@/lib/decisions/analysis-retryability";
 import { createDecisionInputSchema } from "@/lib/decisions/validation";
 import { routing, type Locale } from "@/lib/i18n/routing";
+import { captureEvent } from "@/lib/observability/capture";
 
 type GetUser = () => Promise<AuthenticatedUserIdResult>;
+type CaptureFn = typeof captureEvent;
 
 type AnalysisMutationRow = {
   id: string;
@@ -52,6 +54,7 @@ type MemoryStore = {
 type BaseDeps = {
   getUser: GetUser;
   db?: DecisionDb;
+  capture?: CaptureFn;
 };
 
 type AnalysisMutationDeps = BaseDeps &
@@ -156,6 +159,13 @@ export async function createDecision(input: unknown, deps: BaseDeps) {
     select: { id: true },
   });
 
+  // Emit once on successful capture. Reasoning is reduced to a boolean — no prose.
+  await (deps.capture ?? captureEvent)(
+    "decision_created",
+    { has_reasoning: Boolean(parsed.data.reasoning) },
+    { distinctId: user.userId },
+  );
+
   return {
     status: "success" as const,
     decisionId: decision.id,
@@ -205,6 +215,16 @@ export async function retryDecisionAnalysis(decisionId: string, deps: AnalysisMu
     data: { status: "processing", failureReason: null, updatedAt },
     select: { id: true, version: true, status: true, updatedAt: true },
   });
+
+  // A stalled processing analysis being retried is a distinct trigger from a user
+  // manually retrying a failed one.
+  const trigger =
+    latestAnalysis.status === "processing" && retryability.isStalled ? "stalled" : "manual";
+  await (deps.capture ?? captureEvent)(
+    "analysis_retried",
+    { trigger },
+    { distinctId: user.userId },
+  );
 
   await deps.triggerAnalysis?.(decisionId);
 
@@ -265,6 +285,12 @@ export async function reanalyzeDecision(decisionId: string, deps: AnalysisMutati
 
     if (result.status === "success") {
       await deps.triggerAnalysis?.(decisionId);
+      // nextVersion was (prior max) + 1, so the prior version is one below the new one.
+      await (deps.capture ?? captureEvent)(
+        "reanalysis_run",
+        { prior_version: result.analysis.version - 1 },
+        { distinctId: user.userId },
+      );
     }
 
     return result;

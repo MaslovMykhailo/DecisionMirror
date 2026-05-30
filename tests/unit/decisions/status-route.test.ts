@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+// The status read path lazily imports the Sentry-backed stalled reporter (server-only)
+// when it observes a stalled analysis; stub server-only so it loads under jsdom.
+vi.mock("server-only", () => ({}));
+
 import { createDecisionStatusGetHandler } from "@/lib/decisions/status-http";
 
 const updatedAt = new Date("2026-05-30T12:00:00.000Z");

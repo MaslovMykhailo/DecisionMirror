@@ -6,6 +6,7 @@ import { useTransition } from "react";
 import { usePathname, useRouter } from "@/lib/i18n/navigation";
 import { routing } from "@/lib/i18n/routing";
 import type { Locale } from "@/lib/i18n/routing";
+import { captureClientEvent } from "@/lib/observability/capture-client";
 import { cn } from "@/lib/utils";
 
 /**
@@ -29,8 +30,10 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         aria-label={t("label")}
         className="bg-background rounded-md border px-2 py-1"
         onChange={(event) => {
+          const nextLocale = event.target.value as Locale;
+          captureClientEvent("locale_switched", { from: locale, to: nextLocale });
           startTransition(() => {
-            router.replace(pathname, { locale: event.target.value as Locale });
+            router.replace(pathname, { locale: nextLocale });
           });
         }}
       >

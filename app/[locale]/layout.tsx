@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Figtree, Inter } from "next/font/google";
 import type { Metadata } from "next";
 
+import { PostHogProvider } from "@/components/observability/posthog-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { routing } from "@/lib/i18n/routing";
 
@@ -54,7 +55,9 @@ export default async function LocaleLayout({
     >
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
         <ThemeProvider>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          <PostHogProvider>
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </PostHogProvider>
         </ThemeProvider>
       </body>
     </html>

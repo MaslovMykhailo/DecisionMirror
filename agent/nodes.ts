@@ -1,6 +1,10 @@
+import type { RunnableConfig } from "@langchain/core/runnables";
+
 import { analysisOutputSchema, type AnalysisOutput } from "@/agent/schema";
 import type { AnalysisProvider } from "@/agent/provider/types";
+import { deriveDecisionComplexity } from "@/lib/decisions/history";
 import { routing, type Locale } from "@/lib/i18n/routing";
+import { attachRunMetadata } from "@/lib/observability/langsmith";
 
 type DecisionRecord = {
   id: string;
@@ -26,12 +30,19 @@ export type AgentDb = {
   };
 };
 
+export type RecalledMemories = {
+  /** Human-readable prior patterns fed to the analysis prompt. */
+  patterns: string[];
+  /** Identifiers of the recalled memory rows, for trace metadata (by reference). */
+  recalledIds: string[];
+};
+
 export type AgentMemory = {
   recall: (args: {
     userId: string;
     decisionId: string;
     decisionInput: NonNullable<AgentState["decisionInput"]>;
-  }) => Promise<string[]>;
+  }) => Promise<RecalledMemories>;
   remember: (args: {
     userId: string;
     decisionId: string;
@@ -57,6 +68,7 @@ export type AgentState = {
   validatedOutput?: AnalysisOutput;
   failureReason?: string;
   canAnalyze?: boolean;
+  startedAtMs?: number;
 };
 
 type NodeResult = Partial<AgentState>;
@@ -65,19 +77,67 @@ function supportedLocale(locale: string | null | undefined): Locale {
   return routing.locales.includes(locale as Locale) ? (locale as Locale) : routing.defaultLocale;
 }
 
+export type AgentFailureClass = "validation" | "provider";
+
+export type AgentFailureReporter = {
+  captureAgentFailure: (args: {
+    decisionId: string;
+    node: string;
+    failureClass: AgentFailureClass;
+    error?: unknown;
+  }) => void;
+  captureStalledAnalysis: (args: {
+    decisionId: string;
+    analysisId: string;
+    version: number;
+  }) => void;
+};
+
+export const noopReporter: AgentFailureReporter = {
+  captureAgentFailure: () => undefined,
+  captureStalledAnalysis: () => undefined,
+};
+
+export type AnalysisAnalytics = {
+  started: (args: { distinctId?: string; version: number }) => void | Promise<void>;
+  ready: (args: {
+    distinctId?: string;
+    duration_ms: number;
+    bias_count: number;
+    complexity: number;
+  }) => void | Promise<void>;
+  failed: (args: { distinctId?: string; reason_class: AgentFailureClass }) => void | Promise<void>;
+};
+
+export const noopAnalytics: AnalysisAnalytics = {
+  started: () => undefined,
+  ready: () => undefined,
+  failed: () => undefined,
+};
+
+type Clock = () => Date;
+const defaultClock: Clock = () => new Date();
+
 export const noopMemory: AgentMemory = {
-  recall: async () => [],
+  recall: async () => ({ patterns: [], recalledIds: [] }),
   remember: async () => undefined,
 };
 
 export function createLoadMemoryNode({
   db,
   memory = noopMemory,
+  analytics = noopAnalytics,
+  now = defaultClock,
 }: {
   db: AgentDb;
   memory?: AgentMemory;
+  analytics?: AnalysisAnalytics;
+  now?: Clock;
 }) {
-  return async function loadMemoryNode(state: AgentState): Promise<NodeResult> {
+  return async function loadMemoryNode(
+    state: AgentState,
+    config?: RunnableConfig,
+  ): Promise<NodeResult> {
     const decision = await db.decision.findUnique({
       where: { id: state.decisionId },
       select: {
@@ -115,10 +175,23 @@ export function createLoadMemoryNode({
       decision: decision.decision,
       reasoning: decision.reasoning,
     };
-    const priorPatterns = await memory.recall({
+    // Mark the start of this analysis run and announce it. duration_ms at ready is
+    // measured against this timestamp (time-to-ready), so it is taken once here.
+    const startedAtMs = now().getTime();
+    await analytics.started({ distinctId: decision.userId, version: analysis.version });
+
+    const recalled = await memory.recall({
       decisionId: state.decisionId,
       decisionInput,
       userId: decision.userId,
+    });
+
+    // Record which memories were surfaced, by id reference (never raw content), so a
+    // traced run can be inspected for irrelevant recall.
+    attachRunMetadata(config, {
+      decisionId: state.decisionId,
+      version: analysis.version,
+      recalledMemoryIds: recalled.recalledIds,
     });
 
     return {
@@ -128,7 +201,8 @@ export function createLoadMemoryNode({
       userId: decision.userId,
       locale: supportedLocale(analysis.locale),
       decisionInput,
-      priorPatterns,
+      priorPatterns: recalled.patterns,
+      startedAtMs,
     };
   };
 }
@@ -195,9 +269,13 @@ export function failedAnalysisData(failureReason: string) {
 export function createPersistRememberNode({
   db,
   memory = noopMemory,
+  analytics = noopAnalytics,
+  now = defaultClock,
 }: {
   db: AgentDb;
   memory?: AgentMemory;
+  analytics?: AnalysisAnalytics;
+  now?: Clock;
 }) {
   return async function persistRememberNode(state: AgentState): Promise<NodeResult> {
     if (!state.analysisId || !state.validatedOutput || !state.userId || !state.decisionInput) {
@@ -217,13 +295,38 @@ export function createPersistRememberNode({
       analysis: state.validatedOutput,
     });
 
+    // Counts/enums are derived from the validated output; duration from the run's start.
+    await analytics.ready({
+      distinctId: state.userId,
+      duration_ms: now().getTime() - (state.startedAtMs ?? now().getTime()),
+      bias_count: state.validatedOutput.biases.length,
+      complexity: deriveDecisionComplexity(state.validatedOutput) ?? 0,
+    });
+
     return {};
   };
 }
 
-export function createFailNode({ db }: { db: AgentDb }) {
+export function createFailNode({
+  db,
+  reporter = noopReporter,
+  analytics = noopAnalytics,
+}: {
+  db: AgentDb;
+  reporter?: AgentFailureReporter;
+  analytics?: AnalysisAnalytics;
+}) {
   return async function failNode(state: AgentState): Promise<NodeResult> {
     if (!state.analysisId) return {};
+
+    // Reaching the fail node means the structured output did not satisfy the contract:
+    // a validation failure, distinct from the provider/runtime errors caught in runAgent.
+    reporter.captureAgentFailure({
+      decisionId: state.decisionId,
+      node: "validate",
+      failureClass: "validation",
+    });
+    await analytics.failed({ distinctId: state.userId, reason_class: "validation" });
 
     await db.analysis.update({
       where: { id: state.analysisId },

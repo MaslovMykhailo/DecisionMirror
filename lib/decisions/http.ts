@@ -7,12 +7,14 @@ type RetryDecisionDeps = Parameters<typeof retryDecisionAnalysis>[1];
 type ReanalyzeDecisionDeps = Parameters<typeof reanalyzeDecision>[1];
 type BackgroundTrigger = (decisionId: string) => void | Promise<void>;
 type ScheduleAfter = (callback: () => void | Promise<void>) => void;
+type FlushAnalytics = () => void | Promise<void>;
 
 type DecisionPostDeps = {
   getUser: () => Promise<AuthenticatedUserIdResult>;
   db?: CreateDecisionDeps["db"];
   triggerAnalysis?: BackgroundTrigger;
   scheduleAfter?: ScheduleAfter;
+  flush?: FlushAnalytics;
 };
 
 type AnalysisMutationPostDeps = {
@@ -20,9 +22,26 @@ type AnalysisMutationPostDeps = {
   db?: RetryDecisionDeps["db"];
   triggerAnalysis?: BackgroundTrigger;
   scheduleAfter?: ScheduleAfter;
+  flush?: FlushAnalytics;
   now?: RetryDecisionDeps["now"];
   stalledTimeoutMs?: RetryDecisionDeps["stalledTimeoutMs"];
 };
+
+// Server-side analytics events are emitted during the background analysis run. Flushing
+// inside the after()/waitUntil window ensures they reach PostHog before the serverless
+// invocation is torn down. Defaults internally so route wiring need not thread it.
+async function defaultFlush(): Promise<void> {
+  const { flushServerPostHog } = await import("@/lib/observability/posthog-server");
+  await flushServerPostHog();
+}
+
+async function runThenFlush(
+  deps: { triggerAnalysis?: BackgroundTrigger; flush?: FlushAnalytics },
+  decisionId: string,
+) {
+  await deps.triggerAnalysis?.(decisionId);
+  await (deps.flush ?? defaultFlush)();
+}
 
 type DecisionAnalysisContext = {
   params: Promise<{ decisionId: string }>;
@@ -51,14 +70,14 @@ export function createDecisionPostHandler(deps: DecisionPostDeps) {
       return Response.json(result, { status: 400 });
     }
 
-    deps.scheduleAfter?.(() => deps.triggerAnalysis?.(result.decisionId));
+    deps.scheduleAfter?.(() => runThenFlush(deps, result.decisionId));
 
     return Response.json(result, { status: 201 });
   };
 }
 
 function scheduleAnalysis(deps: AnalysisMutationPostDeps, decisionId: string) {
-  deps.scheduleAfter?.(() => deps.triggerAnalysis?.(decisionId));
+  deps.scheduleAfter?.(() => runThenFlush(deps, decisionId));
 }
 
 function mutationResponse(result: Awaited<ReturnType<typeof retryDecisionAnalysis>>) {

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { noopAnalytics, noopReporter } from "@/agent/nodes";
 import {
   invalidAnalysisOutputs,
   validAnalysisOutput,
@@ -32,7 +33,7 @@ describe("agent graph", () => {
     const db = createDb();
     const provider = { analyzeDecision: vi.fn().mockResolvedValue(validAnalysisOutput) };
     const memory = {
-      recall: vi.fn().mockResolvedValue([]),
+      recall: vi.fn().mockResolvedValue({ patterns: [], recalledIds: [] }),
       remember: vi.fn().mockResolvedValue(undefined),
     };
     const { runAgent } = await import("@/agent");
@@ -78,7 +79,10 @@ describe("agent graph", () => {
     const provider = {
       analyzeDecision: vi.fn().mockResolvedValue(invalidAnalysisOutputs.unknownCategory),
     };
-    const memory = { recall: vi.fn().mockResolvedValue([]), remember: vi.fn() };
+    const memory = {
+      recall: vi.fn().mockResolvedValue({ patterns: [], recalledIds: [] }),
+      remember: vi.fn(),
+    };
     const { runAgent } = await import("@/agent");
 
     await runAgent("decision_1", { db, provider, memory });
@@ -98,7 +102,10 @@ describe("agent graph", () => {
   it("invokes a checkpointer-backed graph with an analysis-scoped thread id", async () => {
     const db = createDb();
     const provider = { analyzeDecision: vi.fn().mockResolvedValue(validAnalysisOutput) };
-    const memory = { recall: vi.fn().mockResolvedValue([]), remember: vi.fn() };
+    const memory = {
+      recall: vi.fn().mockResolvedValue({ patterns: [], recalledIds: [] }),
+      remember: vi.fn(),
+    };
     const checkpointer = { kind: "test-checkpointer" };
     const invoke = vi.fn().mockResolvedValue(undefined);
     const graphFactory = vi.fn().mockReturnValue({ invoke });
@@ -106,7 +113,14 @@ describe("agent graph", () => {
 
     await runAgent("decision_1", { db, provider, memory, checkpointer, graphFactory });
 
-    expect(graphFactory).toHaveBeenCalledWith({ db, provider, memory, checkpointer });
+    expect(graphFactory).toHaveBeenCalledWith({
+      db,
+      provider,
+      memory,
+      checkpointer,
+      reporter: noopReporter,
+      analytics: noopAnalytics,
+    });
     expect(invoke).toHaveBeenCalledWith(
       { decisionId: "decision_1" },
       { configurable: { thread_id: "analysis:analysis_1" } },
