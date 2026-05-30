@@ -28,6 +28,7 @@ by evals.
 ## Unit (Vitest)
 
 Fast, no I/O, run constantly in watch mode — the TDD companion.
+Unit tests live in `tests/unit/<feature>/` and use the `*.test.ts` suffix.
 
 Targets:
 - **The LLM output contract** (`agent/schema.ts`): valid payloads parse; malformed/out-of-enum
@@ -39,9 +40,27 @@ Targets:
 
 ---
 
+## Component (Vitest + jsdom)
+
+Component tests live in `tests/component/<feature>/` and use the `*.test.tsx` suffix. They cover
+deterministic React behavior, accessibility-facing controls, and component wiring that benefits
+from rendering in jsdom.
+
+Rules:
+- Mock browser/theme/provider boundaries that would otherwise make the test depend on local
+  storage, OS settings, network, or timers.
+- Keep these tests in the default `pnpm test` gate; they must stay offline and deterministic.
+- Prefer small feature folders like `theme/`, `capture/`, or `dashboard/` rather than a generic
+  `components/` bucket.
+
+---
+
 ## Integration (Vitest + real Postgres)
 
 The behaviour that unit tests can't reach: data flow through route handlers and the DB.
+Integration tests live in `tests/integration/<feature>/` and use the
+`*.integration.test.ts` / `*.integration.test.tsx` suffix. They run through
+`pnpm test:integration`, not the default `pnpm test` gate.
 
 - **Real PostgreSQL via Testcontainers** (or the CI Postgres service) with pgvector, migrated
   per run — so per-user isolation and queries are tested against the real engine, not a mock.
@@ -64,6 +83,7 @@ The behaviour that unit tests can't reach: data flow through route handlers and 
 E2E covers real user journeys through the built app, but **only deterministic ones**, so the
 LLM is **stubbed** (the app talks to a fake provider returning fixed output). This keeps e2e
 fast, free, and non-flaky.
+Playwright specs live in `e2e/<feature>/` and use the `*.spec.ts` suffix.
 
 Flows worth e2e:
 - Sign in (Google mocked / Credentials), sign out, protected-route redirect.
@@ -110,4 +130,8 @@ real/seed runs ─▶ LangSmith dataset ─▶ scorers ─▶ quality dashboard 
 | Evals | real/seed | **real Claude** | real |
 
 The one rule that keeps the suite trustworthy: **only evals call a real model.**
+
+Shared test-only builders, fixtures, mocks, and setup utilities live under
+`tests/support/{builders,fixtures,mocks,setup}/`. They are imported by tests but are not executable
+test files.
 </content>

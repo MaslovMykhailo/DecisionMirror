@@ -38,8 +38,12 @@ decision-mirror/
 ├─ prisma/
 │  ├─ schema.prisma
 │  └─ migrations/
-├─ tests/                        # unit + integration (Vitest)
-├─ e2e/                          # Playwright specs
+├─ tests/                        # Vitest suite, organized by layer
+│  ├─ unit/<feature>/            # pure logic and contract tests
+│  ├─ component/<feature>/       # React component tests
+│  ├─ integration/<feature>/     # DB / route-handler integration tests
+│  └─ support/                   # builders, fixtures, mocks, setup helpers
+├─ e2e/<feature>/                # Playwright specs
 ├─ AGENTS.md                     # agent working agreement (TDD mandate)
 ├─ CLAUDE.md                     # Claude Code working agreement (TDD mandate)
 └─ ARCHITECTURE.md
@@ -82,9 +86,29 @@ format = whitespace/style) via `eslint-config-prettier`, so they never fight.
 | Zod schemas | `camelCaseSchema` | `decisionInputSchema` |
 | DB tables (Prisma models) | `PascalCase` singular | `Decision`, `Analysis` |
 | Route Handler files | Next.js convention | `app/api/decisions/route.ts` |
-| Test files | `*.test.ts` (unit/integration), `*.spec.ts` (e2e) | `complexity.test.ts`, `capture.spec.ts` |
+| Test files | `*.test.ts` (unit), `*.test.tsx` (component), `*.integration.test.ts` (integration), `*.spec.ts` (e2e) | `complexity.test.ts`, `theme-toggle.test.tsx`, `data-model.integration.test.ts`, `capture.spec.ts` |
 
 Path alias: `@/` → repo root, so imports read `@/lib/db` not `../../../lib/db`.
+
+Test directories are layer-first, then feature-first:
+
+```
+tests/
+  unit/<feature>/
+  component/<feature>/
+  integration/<feature>/
+  support/
+    builders/
+    fixtures/
+    mocks/
+    setup/
+e2e/<feature>/
+```
+
+Use kebab-case feature folders that match the capability or bounded area under test, such as
+`domain-taxonomy`, `internationalization`, `design-system`, `theme`, `data-model`, or `agent`.
+Keep reusable test-only builders, fixtures, mocks, and setup modules under `tests/support/`;
+those files are helpers, not executable tests.
 
 ---
 
