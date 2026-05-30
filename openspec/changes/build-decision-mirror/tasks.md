@@ -12,7 +12,7 @@ The LLM is mocked/stubbed in all gate tests — only evals (12.5) call a real mo
 - [ ] 1.3 Initialize **shadcn/ui** (Radix + Tailwind), define the CSS-variable design-token layer for light/dark
 - [ ] 1.4 Add and configure Prisma; define `User`, `Account`, `Session`, `Decision`, and `Analysis` (version) models with relations and the status enum
 - [ ] 1.5 Enable the **pgvector** extension and the long-term-memory table; provision local (docker compose) and hosted PostgreSQL; wire `DATABASE_URL` and run the initial migration
-- [ ] 1.6 Add environment configuration (`.env.example`): `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`, `OPENAI_API_KEY` + model, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`; document all required vars
+- [ ] 1.6 Add environment configuration (`.env.example`): `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`, `OPENAI_API_KEY` + model, embeddings key, `NEXT_PUBLIC_SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`; document all required vars
 - [ ] 1.7 Define shared TypeScript types and the category enum + cognitive-bias catalog as a single source of truth (Zod-backed)
 
 ## 2. Internationalization foundation

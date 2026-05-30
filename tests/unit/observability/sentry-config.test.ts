@@ -7,14 +7,16 @@ import {
 } from "@/lib/observability/sentry";
 
 describe("sentry init options", () => {
-  it("is disabled (no DSN) when SENTRY_DSN is absent — a no-op", () => {
+  it("is disabled (no DSN) when NEXT_PUBLIC_SENTRY_DSN is absent — a no-op", () => {
     const options = sentryInitOptions({});
     expect(options.dsn).toBeUndefined();
     expect(options.enabled).toBe(false);
   });
 
   it("is enabled and carries the DSN when configured", () => {
-    const options = sentryInitOptions({ SENTRY_DSN: "https://abc@o1.ingest.sentry.io/1" });
+    const options = sentryInitOptions({
+      NEXT_PUBLIC_SENTRY_DSN: "https://abc@o1.ingest.sentry.io/1",
+    });
     expect(options.dsn).toBe("https://abc@o1.ingest.sentry.io/1");
     expect(options.enabled).toBe(true);
     expect(typeof options.beforeSend).toBe("function");
@@ -30,7 +32,7 @@ describe("sentry release derivation", () => {
 
   it("includes the resolved release in init options", () => {
     const options = sentryInitOptions({
-      SENTRY_DSN: "https://abc@o1.ingest.sentry.io/1",
+      NEXT_PUBLIC_SENTRY_DSN: "https://abc@o1.ingest.sentry.io/1",
       VERCEL_GIT_COMMIT_SHA: "deadbeef",
     });
     expect(options.release).toBe("deadbeef");

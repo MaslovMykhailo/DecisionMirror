@@ -55,7 +55,7 @@ so we need all three lenses before relying on it.
   (PostHog provider), new `instrumentation.ts` / `sentry.*.config.ts` from the wizard, new
   analytics + tracing helper modules under `lib/observability/`.
 - **Config / build**: `next.config` wrapped with `withSentryConfig`; source-map upload at
-  build; `instrumentation-client.ts`. New env vars consumed (`SENTRY_DSN`, `POSTHOG_KEY`,
+  build; `instrumentation-client.ts`. New env vars consumed (`NEXT_PUBLIC_SENTRY_DSN`, `POSTHOG_KEY`,
   `NEXT_PUBLIC_POSTHOG_*`, `LANGSMITH_*`) — already present in `.env.example`.
 - **Dependencies**: add `@sentry/nextjs`, `posthog-js`, `posthog-node`, `langsmith`.
 - **External systems**: Sentry project `decision-mirror` (org `mykhailom-system`); PostHog

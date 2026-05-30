@@ -3,7 +3,7 @@
 `architecture/04-observability.md` specifies three non-overlapping observability layers
 (Sentry = "did it break?", PostHog = "are people getting value?", LangSmith = "did the agent
 reason well?") but none are wired in production. Env vars already exist in `.env.example`
-(`SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_*`); env access today is inline `process.env` with
+(`NEXT_PUBLIC_SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_*`); env access today is inline `process.env` with
 no central config module. The async analysis pipeline (`agent/index.ts` `runAgent`, graph in
 `agent/graph.ts`/`agent/nodes.ts`, scheduled via `after()` in `lib/decisions/http.ts`, status
 in `lib/decisions/status-http.ts`) is the highest-risk surface. CLAUDE.md non-negotiable #5

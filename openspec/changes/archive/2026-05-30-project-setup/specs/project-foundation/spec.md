@@ -53,7 +53,7 @@ The system SHALL document every required environment variable in a committed
 `.env.example` and load runtime values from a git-ignored `.env.local`. `.env.example`
 SHALL contain no secret values. The documented keys SHALL include `DATABASE_URL`,
 `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `ANTHROPIC_API_KEY` and its model
-identifier, the embeddings provider key, `SENTRY_DSN`, `POSTHOG_KEY`, and
+identifier, the embeddings provider key, `NEXT_PUBLIC_SENTRY_DSN`, `POSTHOG_KEY`, and
 `LANGSMITH_API_KEY`.
 
 #### Scenario: Example file lists all required keys without values

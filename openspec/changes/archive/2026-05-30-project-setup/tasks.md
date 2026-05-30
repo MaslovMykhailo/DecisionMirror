@@ -34,7 +34,7 @@ generated offline, but still need a one-time apply against a real database — s
 
 ## 4. Environment configuration
 
-- [x] 4.1 Create `.env.example` (committed, no secrets) documenting `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `ANTHROPIC_API_KEY` + model, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`
+- [x] 4.1 Create `.env.example` (committed, no secrets) documenting `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `ANTHROPIC_API_KEY` + model, embeddings key, `NEXT_PUBLIC_SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`
 - [x] 4.2 Ensure `.env.local` is git-ignored and load runtime config from it
 
 ## 5. Domain taxonomy (single source of truth)

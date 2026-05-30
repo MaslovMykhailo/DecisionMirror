@@ -9,7 +9,7 @@
 ## 2. Sentry — multi-runtime error & performance capture
 
 - [x] 2.1 Run `npx @sentry/wizard@latest -i nextjs --saas --org mykhailom-system --project decision-mirror` once; review and commit generated `instrumentation.ts`, `instrumentation-client.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts`, and `withSentryConfig` wrapping in `next.config`.
-- [x] 2.2 Write failing test: Sentry init is a no-op when `SENTRY_DSN` is absent (no events, no throw).
+- [x] 2.2 Write failing test: Sentry init is a no-op when `NEXT_PUBLIC_SENTRY_DSN` is absent (no events, no throw).
 - [x] 2.3 Wire each runtime config to self-disable when DSN absent; green.
 - [x] 2.4 Write failing test: a central `beforeSend` strips all non-allowlisted fields (reuses `scrub.ts`); decision/analysis prose never leaves.
 - [x] 2.5 Implement `beforeSend` scrubbing across all runtime configs; green.
@@ -78,6 +78,6 @@
   then emit a decision end-to-end and confirm the tiles populate.
 - **7.7** — In the LangSmith console, set the project `decision-analysis` retention to
   **14 days**, region **US** (chosen values documented in `architecture/04-observability.md`).
-- **8.2** — With a real `SENTRY_DSN` set, visit `/sentry-example-page`, trigger the error,
+- **8.2** — With a real `NEXT_PUBLIC_SENTRY_DSN` set, visit `/sentry-example-page`, trigger the error,
   and confirm it appears in Sentry → Issues (the page is implemented; only the live
   verification is outstanding).

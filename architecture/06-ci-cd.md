@@ -71,7 +71,7 @@ merge to main      ─▶  Vercel Production Deployment
 
 Required secrets (mirrored across CI / Vercel as applicable): `DATABASE_URL`, `AUTH_SECRET`,
 `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `OPENAI_API_KEY`, `AGENT_EMBEDDINGS_PROVIDER`,
-embeddings key/model settings, `AGENT_MEMORY_TOP_K`, `SENTRY_DSN` (+ auth token for
+embeddings key/model settings, `AGENT_MEMORY_TOP_K`, `NEXT_PUBLIC_SENTRY_DSN` (+ auth token for
 source-map upload), `POSTHOG_KEY`, `LANGSMITH_API_KEY`, and LangSmith tracing/project
 variables when tracing is enabled. Documented in `.env.example`; never committed with values.
 

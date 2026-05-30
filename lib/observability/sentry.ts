@@ -48,7 +48,7 @@ export type SentryInitOptions = {
 export function sentryInitOptions(
   env: Record<string, string | undefined> = process.env,
 ): SentryInitOptions {
-  const dsn = env.SENTRY_DSN || undefined;
+  const dsn = env.NEXT_PUBLIC_SENTRY_DSN || undefined;
   return {
     dsn,
     enabled: Boolean(dsn),

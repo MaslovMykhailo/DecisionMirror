@@ -25,7 +25,7 @@ feature can be written test-first on day one.
   initial migration.
 - Add environment configuration: a committed `.env.example` documenting every required
   key (`DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`, `ANTHROPIC_API_KEY` +
-  model, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`), loaded from a
+  model, embeddings key, `NEXT_PUBLIC_SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`), loaded from a
   git-ignored `.env.local`.
 - Define shared TypeScript types and the `category` enum + 8-entry cognitive-bias catalog
   as a single Zod-backed source of truth, exposing language-neutral identifiers (labels
