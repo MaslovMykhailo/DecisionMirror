@@ -67,6 +67,26 @@ describe("auth error mapping", () => {
     });
   });
 
+  it("maps Prisma driver-adapter duplicate email errors to a duplicate-email field error", () => {
+    const mapped = mapSignupPersistenceError({
+      code: "P2002",
+      meta: {
+        driverAdapterError: {
+          cause: {
+            constraint: {
+              fields: ["email"],
+            },
+          },
+        },
+      },
+    });
+
+    expect(mapped).toEqual({
+      code: authErrorCodes.duplicateEmail,
+      fieldErrors: { email: ["email_already_registered"] },
+    });
+  });
+
   it("does not expose whether invalid credentials failed by email or password", () => {
     const unknownEmail = invalidCredentialsError();
     const incorrectPassword = invalidCredentialsError();

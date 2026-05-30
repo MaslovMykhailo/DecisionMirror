@@ -1,16 +1,20 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { validAnalysisOutput } from "@/tests/support/fixtures/analysis-output";
+
 const describeDb = process.env.DATABASE_URL ? describe : describe.skip;
 
 describeDb("authenticated decision isolation (integration)", () => {
   let prisma: Awaited<typeof import("@/lib/db/client")>["prisma"];
   let service: typeof import("@/lib/decisions/service");
+  let history: typeof import("@/lib/decisions/history");
   let userA: string;
   let userB: string;
 
   beforeAll(async () => {
     ({ prisma } = await import("@/lib/db/client"));
     service = await import("@/lib/decisions/service");
+    history = await import("@/lib/decisions/history");
     const suffix = Date.now();
     const a = await prisma.user.create({ data: { email: `user-a-${suffix}@example.com` } });
     const b = await prisma.user.create({ data: { email: `user-b-${suffix}@example.com` } });
@@ -87,5 +91,68 @@ describeDb("authenticated decision isolation (integration)", () => {
       userId: userA,
       decisionId: otherDecision.id,
     });
+  });
+
+  it("excludes other users from history list and detail read models", async () => {
+    const ownDecision = await prisma.decision.create({
+      data: {
+        userId: userA,
+        situation: "Own private situation",
+        decision: "Keep consulting",
+      },
+    });
+    const otherDecision = await prisma.decision.create({
+      data: {
+        userId: userB,
+        situation: "Other private situation",
+        decision: "Sell the company",
+      },
+    });
+
+    await prisma.analysis.create({
+      data: {
+        decisionId: ownDecision.id,
+        version: 1,
+        status: "ready",
+        category: validAnalysisOutput.category,
+        biases: validAnalysisOutput.biases,
+        missedAlternatives: validAnalysisOutput.missedAlternatives,
+        premortemRisks: validAnalysisOutput.premortemRisks,
+        keyAssumptions: validAnalysisOutput.keyAssumptions,
+        warningSigns: validAnalysisOutput.warningSigns,
+      },
+    });
+    await prisma.analysis.create({
+      data: {
+        decisionId: otherDecision.id,
+        version: 1,
+        status: "ready",
+        category: "business",
+        biases: validAnalysisOutput.biases,
+        missedAlternatives: ["Other user's private alternative"],
+        premortemRisks: ["Other user's private risk"],
+        keyAssumptions: ["Other user's private assumption"],
+        warningSigns: ["Other user's private warning"],
+      },
+    });
+
+    const list = await history.getDecisionHistoryList({ getUser: asUserA });
+    expect(list.status).toBe("success");
+    if (list.status !== "success") return;
+    expect(list.decisions.map((decision) => decision.id)).toContain(ownDecision.id);
+    expect(list.decisions.map((decision) => decision.id)).not.toContain(otherDecision.id);
+    expect(JSON.stringify(list)).not.toContain("Sell the company");
+    expect(JSON.stringify(list)).not.toContain("Other user's private");
+
+    await expect(
+      history.getDecisionHistoryDetail(otherDecision.id, { getUser: asUserA }),
+    ).resolves.toEqual({ status: "not_found" });
+
+    const detail = await history.getDecisionHistoryDetail(ownDecision.id, { getUser: asUserA });
+    expect(detail.status).toBe("success");
+    if (detail.status === "success") {
+      expect(detail.decision.decision).toBe("Keep consulting");
+      expect(detail.readyAnalysis?.result.category).toBe(validAnalysisOutput.category);
+    }
   });
 });

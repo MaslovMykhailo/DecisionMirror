@@ -21,7 +21,7 @@ function createDb() {
   return {
     decision: { findUnique: vi.fn().mockResolvedValue(createDecision()) },
     analysis: {
-      findFirst: vi.fn().mockResolvedValue({ id: "analysis_1", version: 1 }),
+      findFirst: vi.fn().mockResolvedValue({ id: "analysis_1", version: 1, locale: "uk" }),
       update: vi.fn().mockResolvedValue({ id: "analysis_1" }),
     },
   };
@@ -39,6 +39,13 @@ describe("agent graph", () => {
 
     await runAgent("decision_1", { db, provider, memory });
 
+    expect(provider.analyzeDecision).toHaveBeenCalledWith({
+      locale: "uk",
+      situation: "Should I accept the new role?",
+      decision: "Accept the offer.",
+      reasoning: "It has more scope.",
+      priorPatterns: [],
+    });
     expect(db.analysis.update).toHaveBeenCalledWith({
       where: { id: "analysis_1" },
       data: {
@@ -81,11 +88,6 @@ describe("agent graph", () => {
       data: {
         status: "failed",
         category: null,
-        biases: null,
-        missedAlternatives: null,
-        premortemRisks: null,
-        keyAssumptions: null,
-        warningSigns: null,
         failureReason: expect.stringContaining("structured analysis output"),
       },
       select: { id: true },
@@ -125,14 +127,33 @@ describe("agent graph", () => {
       data: {
         status: "failed",
         category: null,
-        biases: null,
-        missedAlternatives: null,
-        premortemRisks: null,
-        keyAssumptions: null,
-        warningSigns: null,
         failureReason: expect.stringContaining("provider unavailable"),
       },
       select: { id: true },
     });
+  });
+
+  it("persists failed state when memory recall throws before provider analysis", async () => {
+    const db = createDb();
+    const provider = { analyzeDecision: vi.fn() };
+    const memory = {
+      recall: vi.fn().mockRejectedValue(new Error("memory unavailable")),
+      remember: vi.fn(),
+    };
+    const { runAgent } = await import("@/agent");
+
+    await runAgent("decision_1", { db, provider, memory });
+
+    expect(provider.analyzeDecision).not.toHaveBeenCalled();
+    expect(db.analysis.update).toHaveBeenCalledWith({
+      where: { id: "analysis_1" },
+      data: {
+        status: "failed",
+        category: null,
+        failureReason: expect.stringContaining("memory unavailable"),
+      },
+      select: { id: true },
+    });
+    expect(memory.remember).not.toHaveBeenCalled();
   });
 });

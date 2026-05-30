@@ -13,6 +13,7 @@ type DecisionRecord = {
 type ProcessingAnalysisRecord = {
   id: string;
   version: number;
+  locale?: string | null;
 };
 
 export type AgentDb = {
@@ -60,6 +61,10 @@ export type AgentState = {
 
 type NodeResult = Partial<AgentState>;
 
+function supportedLocale(locale: string | null | undefined): Locale {
+  return routing.locales.includes(locale as Locale) ? (locale as Locale) : routing.defaultLocale;
+}
+
 export const noopMemory: AgentMemory = {
   recall: async () => [],
   remember: async () => undefined,
@@ -94,7 +99,7 @@ export function createLoadMemoryNode({
     const analysis = await db.analysis.findFirst({
       where: { decisionId: state.decisionId, status: "processing" },
       orderBy: { version: "desc" },
-      select: { id: true, version: true },
+      select: { id: true, version: true, locale: true },
     });
 
     if (!analysis) {
@@ -121,7 +126,7 @@ export function createLoadMemoryNode({
       analysisId: analysis.id,
       analysisVersion: analysis.version,
       userId: decision.userId,
-      locale: routing.defaultLocale,
+      locale: supportedLocale(analysis.locale),
       decisionInput,
       priorPatterns,
     };
@@ -183,11 +188,6 @@ export function failedAnalysisData(failureReason: string) {
   return {
     status: "failed",
     category: null,
-    biases: null,
-    missedAlternatives: null,
-    premortemRisks: null,
-    keyAssumptions: null,
-    warningSigns: null,
     failureReason,
   };
 }

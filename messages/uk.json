@@ -66,12 +66,48 @@
       "decision_required": "Введіть рішення."
     }
   },
+  "DecisionHistory": {
+    "title": "Історія рішень",
+    "description": "Переглядайте збережені рішення та стан їхнього аналізу.",
+    "emptyTitle": "Рішень ще немає",
+    "emptyDescription": "Збережені рішення з'являться тут після створення.",
+    "categoryLabel": "Категорія: {category}",
+    "openDetail": "Відкрити рішення"
+  },
+  "DecisionDetail": {
+    "backToHistory": "Назад до історії",
+    "originalInput": "Початкові дані",
+    "situation": "Ситуація",
+    "decision": "Рішення",
+    "reasoning": "Обґрунтування",
+    "analysis": "Аналіз",
+    "categoryLabel": "Категорія: {category}",
+    "biases": "Упередження",
+    "missedAlternatives": "Пропущені альтернативи",
+    "premortemRisks": "Ризики премортему",
+    "keyAssumptions": "Ключові припущення",
+    "warningSigns": "Попереджувальні сигнали",
+    "notFoundTitle": "Рішення не знайдено",
+    "notFoundDescription": "Це рішення недоступне або належить іншому користувачу."
+  },
   "UXState": {
     "loading": "Завантаження…",
     "analyzing": "Аналізуємо ваше рішення…",
     "notReady": "Ваш аналіз ще не готовий.",
     "error": "Щось пішло не так.",
     "empty": "Тут поки нічого немає."
+  },
+  "AnalysisState": {
+    "status": {
+      "processing": "Обробляється",
+      "ready": "Готово",
+      "failed": "Помилка"
+    },
+    "processing": "Аналіз ще обробляється.",
+    "newerProcessing": "Новіший аналіз ще обробляється. Нижче показано останній готовий результат.",
+    "notReady": "Аналіз ще не готовий.",
+    "failed": "Аналіз не вдався. Спробуйте пізніше.",
+    "failedWithReason": "Аналіз не вдався: {reason}"
   },
   "Taxonomy": {
     "category": {

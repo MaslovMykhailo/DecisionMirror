@@ -66,12 +66,48 @@
       "decision_required": "Enter the decision."
     }
   },
+  "DecisionHistory": {
+    "title": "Decision history",
+    "description": "Review saved decisions and their analysis state.",
+    "emptyTitle": "No decisions yet",
+    "emptyDescription": "Saved decisions will appear here after you capture them.",
+    "categoryLabel": "Category: {category}",
+    "openDetail": "Open decision"
+  },
+  "DecisionDetail": {
+    "backToHistory": "Back to history",
+    "originalInput": "Original input",
+    "situation": "Situation",
+    "decision": "Decision",
+    "reasoning": "Reasoning",
+    "analysis": "Analysis",
+    "categoryLabel": "Category: {category}",
+    "biases": "Biases",
+    "missedAlternatives": "Missed alternatives",
+    "premortemRisks": "Premortem risks",
+    "keyAssumptions": "Key assumptions",
+    "warningSigns": "Warning signs",
+    "notFoundTitle": "Decision not found",
+    "notFoundDescription": "This decision is unavailable or belongs to another user."
+  },
   "UXState": {
     "loading": "Loading…",
     "analyzing": "Analyzing your decision…",
     "notReady": "Your analysis isn't ready yet.",
     "error": "Something went wrong.",
     "empty": "Nothing here yet."
+  },
+  "AnalysisState": {
+    "status": {
+      "processing": "Processing",
+      "ready": "Ready",
+      "failed": "Failed"
+    },
+    "processing": "Analysis is still processing.",
+    "newerProcessing": "A newer analysis is still processing. The latest ready result is shown below.",
+    "notReady": "Analysis is not ready yet.",
+    "failed": "Analysis failed. You can try again later.",
+    "failedWithReason": "Analysis failed: {reason}"
   },
   "Taxonomy": {
     "category": {

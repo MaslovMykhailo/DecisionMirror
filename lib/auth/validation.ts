@@ -58,6 +58,13 @@ type PrismaLikeError = {
   code?: unknown;
   meta?: {
     target?: unknown;
+    driverAdapterError?: {
+      cause?: {
+        constraint?: {
+          fields?: unknown;
+        };
+      };
+    };
   };
 };
 
@@ -65,12 +72,14 @@ function isDuplicateEmailPersistenceError(error: unknown): error is PrismaLikeEr
   if (!error || typeof error !== "object") return false;
   const maybeError = error as PrismaLikeError;
   const target = maybeError.meta?.target;
+  const adapterConstraintFields = maybeError.meta?.driverAdapterError?.cause?.constraint?.fields;
 
   return (
     maybeError.code === "P2002" &&
     (target === "User_email_key" ||
       (Array.isArray(target) && target.includes("email")) ||
-      (typeof target === "string" && target.includes("email")))
+      (typeof target === "string" && target.includes("email")) ||
+      (Array.isArray(adapterConstraintFields) && adapterConstraintFields.includes("email")))
   );
 }
 

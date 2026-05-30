@@ -54,4 +54,35 @@ describeDb("data model (integration)", () => {
       ),
     ).rejects.toBeTruthy();
   });
+
+  it("has the structured analysis result columns required by the agent and history views", async () => {
+    const columns = await prisma.$queryRawUnsafe<Array<{ column_name: string }>>(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'Analysis'
+       ORDER BY ordinal_position`,
+    );
+
+    expect(columns.map((column) => column.column_name)).toEqual(
+      expect.arrayContaining([
+        "biases",
+        "missedAlternatives",
+        "premortemRisks",
+        "keyAssumptions",
+        "warningSigns",
+      ]),
+    );
+  });
+
+  it("has the pgvector-backed DecisionMemory table required by production memory recall", async () => {
+    const rows = await prisma.$queryRawUnsafe<Array<{ exists: boolean }>>(
+      `SELECT EXISTS (
+         SELECT 1
+         FROM information_schema.tables
+         WHERE table_schema = 'public' AND table_name = 'DecisionMemory'
+       ) AS "exists"`,
+    );
+
+    expect(rows[0]?.exists).toBe(true);
+  });
 });

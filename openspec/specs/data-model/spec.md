@@ -32,8 +32,9 @@ The `Analysis` model SHALL be append-only: each re-analysis creates a new versio
 rather than mutating an existing one, and each row SHALL carry a monotonically increasing
 `version` per decision. Each `Analysis` SHALL have a `status` of `processing`, `ready`, or
 `failed`, represented as a database enum. A failed analysis SHALL be able to record a
-human-readable failure reason. The "current" analysis for a decision is the newest `ready`
-version.
+human-readable failure reason. Each `Analysis` SHALL carry the locale selected for that
+analysis run so generated prose can be reproduced in the intended language. The "current"
+analysis for a decision is the newest `ready` version.
 
 #### Scenario: Status enum constrains allowed values
 
@@ -51,6 +52,12 @@ version.
 
 - **WHEN** an analysis is persisted with `status = failed`
 - **THEN** a human-readable failure reason can be stored on that row
+
+#### Scenario: Analysis records its run locale
+
+- **WHEN** an analysis row is created
+- **THEN** it stores the supported locale selected for that analysis run
+- **AND** retrying that row preserves the same locale for provider execution
 
 ### Requirement: pgvector long-term-memory table
 

@@ -38,6 +38,7 @@ describe("decision route protection", () => {
         situation: "  Situation  ",
         decision: "  Decision  ",
         reasoning: "  Reasoning  ",
+        locale: "uk",
         userId: "attacker",
         ownerId: "attacker",
       }),
@@ -63,6 +64,7 @@ describe("decision route protection", () => {
         decisionId: "decision_1",
         version: 1,
         status: "processing",
+        locale: "uk",
       },
       select: { id: true },
     });

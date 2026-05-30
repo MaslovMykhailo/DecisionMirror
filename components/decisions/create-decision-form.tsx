@@ -1,11 +1,12 @@
 "use client";
 
 import { Save } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { createDecisionInputSchema, type CreateDecisionData } from "@/lib/decisions/validation";
+import type { Locale } from "@/lib/i18n/routing";
 
 type CreateDecisionFieldErrors = Partial<Record<keyof CreateDecisionData, string[]>>;
 type SubmitState = "idle" | "pending" | "success" | "error";
@@ -42,6 +43,7 @@ function fieldErrorMessages(
 
 export function CreateDecisionForm() {
   const t = useTranslations("DecisionCapture");
+  const locale = useLocale() as Locale;
   const [fieldErrors, setFieldErrors] = useState<CreateDecisionFieldErrors>({});
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
 
@@ -49,7 +51,10 @@ export function CreateDecisionForm() {
     event.preventDefault();
 
     const form = event.currentTarget;
-    const parsed = createDecisionInputSchema.safeParse(Object.fromEntries(new FormData(form)));
+    const parsed = createDecisionInputSchema.safeParse({
+      ...Object.fromEntries(new FormData(form)),
+      locale,
+    });
 
     if (!parsed.success) {
       setSubmitState("idle");

@@ -1,13 +1,17 @@
+import { History } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { LogoutButton } from "@/components/auth/logout-button";
 import { CreateDecisionForm } from "@/components/decisions/create-decision-form";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { logoutAction } from "@/lib/auth/actions";
+import { Link } from "@/lib/i18n/navigation";
 
 export default function Home() {
   const t = useTranslations("Common");
+  const navT = useTranslations("Nav");
   const locale = useLocale();
 
   return (
@@ -19,6 +23,12 @@ export default function Home() {
             <p className="text-muted-foreground max-w-xl text-sm">{t("tagline")}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/decisions">
+                <History />
+                {navT("history")}
+              </Link>
+            </Button>
             <LanguageSwitcher />
             <ThemeToggle />
             <LogoutButton action={logoutAction} redirectTo={`/${locale}/login`} />

@@ -1,5 +1,6 @@
 import type { AuthenticatedUserIdResult } from "@/lib/auth/session";
 import { createDecisionInputSchema } from "@/lib/decisions/validation";
+import { routing, type Locale } from "@/lib/i18n/routing";
 
 type GetUser = () => Promise<AuthenticatedUserIdResult>;
 
@@ -42,6 +43,7 @@ type BaseDeps = {
 
 type AnalysisMutationDeps = BaseDeps & {
   triggerAnalysis?: (decisionId: string) => void | Promise<void>;
+  locale?: Locale;
 };
 
 type MemoryDeps = {
@@ -102,6 +104,7 @@ export async function createDecision(input: unknown, deps: BaseDeps) {
       decisionId: decision.id,
       version: 1,
       status: "processing",
+      locale: parsed.data.locale,
     },
     select: { id: true },
   });
@@ -162,7 +165,12 @@ export async function reanalyzeDecision(decisionId: string, deps: AnalysisMutati
   });
   const nextVersion = (versionAggregate._max.version ?? 0) + 1;
   const analysis = await db.analysis.create({
-    data: { decisionId, version: nextVersion, status: "processing" },
+    data: {
+      decisionId,
+      version: nextVersion,
+      status: "processing",
+      locale: deps.locale ?? routing.defaultLocale,
+    },
     select: { id: true },
   });
 

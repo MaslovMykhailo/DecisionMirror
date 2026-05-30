@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { routing } from "@/lib/i18n/routing";
+
 function requiredTrimmedString(error: string) {
   return z.string({ error }).trim().min(1, { error });
 }
@@ -7,6 +9,7 @@ function requiredTrimmedString(error: string) {
 export const createDecisionInputSchema = z.object({
   situation: requiredTrimmedString("situation_required"),
   decision: requiredTrimmedString("decision_required"),
+  locale: z.enum(routing.locales, { error: "locale_unsupported" }).default(routing.defaultLocale),
   reasoning: z
     .string()
     .trim()

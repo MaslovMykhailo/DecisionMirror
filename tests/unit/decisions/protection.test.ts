@@ -42,6 +42,7 @@ describe("protected decision access", () => {
           situation: "Situation",
           decision: "Decision",
           reasoning: "Reasoning",
+          locale: "uk",
           userId: "attacker",
           ownerId: "attacker",
         },
@@ -67,6 +68,7 @@ describe("protected decision access", () => {
         decisionId: "decision_1",
         version: 1,
         status: "processing",
+        locale: "uk",
       },
       select: { id: true },
     });
@@ -111,6 +113,41 @@ describe("protected decision access", () => {
     });
     expect(db.analysis.update).not.toHaveBeenCalled();
     expect(db.analysis.create).not.toHaveBeenCalled();
+  });
+
+  it("records the requested locale when creating a re-analysis version", async () => {
+    const db = {
+      decision: { findFirst: vi.fn().mockResolvedValue({ id: "decision_1" }) },
+      analysis: {
+        aggregate: vi.fn().mockResolvedValue({ _max: { version: 2 } }),
+        create: vi.fn().mockResolvedValue({ id: "analysis_3" }),
+      },
+    };
+    const triggerAnalysis = vi.fn();
+
+    await expect(
+      reanalyzeDecision("decision_1", {
+        getUser: async () => authenticated,
+        db,
+        triggerAnalysis,
+        locale: "uk",
+      }),
+    ).resolves.toEqual({
+      status: "success",
+      analysisId: "analysis_3",
+      version: 3,
+    });
+
+    expect(db.analysis.create).toHaveBeenCalledWith({
+      data: {
+        decisionId: "decision_1",
+        version: 3,
+        status: "processing",
+        locale: "uk",
+      },
+      select: { id: true },
+    });
+    expect(triggerAnalysis).toHaveBeenCalledWith("decision_1");
   });
 
   it("scopes dashboard aggregation and memory recall to the session user", async () => {

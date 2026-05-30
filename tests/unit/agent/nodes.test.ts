@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createAnalyzeNode, createLoadMemoryNode, validateNode } from "@/agent/nodes";
+import {
+  createAnalyzeNode,
+  createLoadMemoryNode,
+  failedAnalysisData,
+  validateNode,
+} from "@/agent/nodes";
 import {
   invalidAnalysisOutputs,
   validAnalysisOutput,
@@ -21,7 +26,7 @@ describe("agent nodes", () => {
     const db = {
       decision: { findUnique: vi.fn().mockResolvedValue(createDecision()) },
       analysis: {
-        findFirst: vi.fn().mockResolvedValue({ id: "analysis_1", version: 2 }),
+        findFirst: vi.fn().mockResolvedValue({ id: "analysis_1", version: 2, locale: "uk" }),
         update: vi.fn(),
       },
     };
@@ -45,7 +50,7 @@ describe("agent nodes", () => {
     expect(db.analysis.findFirst).toHaveBeenCalledWith({
       where: { decisionId: "decision_1", status: "processing" },
       orderBy: { version: "desc" },
-      select: { id: true, version: true },
+      select: { id: true, version: true, locale: true },
     });
     expect(memory.recall).toHaveBeenCalledWith({
       decisionId: "decision_1",
@@ -61,8 +66,33 @@ describe("agent nodes", () => {
       analysisId: "analysis_1",
       analysisVersion: 2,
       userId: "user_1",
-      locale: "en",
+      locale: "uk",
       priorPatterns: ["You often choose quickly under workload pressure."],
+    });
+  });
+
+  it("passes the loaded locale into provider analysis", async () => {
+    const provider = { analyzeDecision: vi.fn().mockResolvedValue(validAnalysisOutput) };
+    const analyzeNode = createAnalyzeNode({ provider });
+
+    await analyzeNode({
+      decisionId: "decision_1",
+      canAnalyze: true,
+      locale: "uk",
+      decisionInput: {
+        situation: "Працюю в компанії більше 7 років",
+        decision: "Поки вирішив не міняти роботу",
+        reasoning: "Маю кредит довіри, але не розвиваюся",
+      },
+      priorPatterns: [],
+    });
+
+    expect(provider.analyzeDecision).toHaveBeenCalledWith({
+      locale: "uk",
+      situation: "Працюю в компанії більше 7 років",
+      decision: "Поки вирішив не міняти роботу",
+      reasoning: "Маю кредит довіри, але не розвиваюся",
+      priorPatterns: [],
     });
   });
 
@@ -101,5 +131,22 @@ describe("validation node", () => {
       validatedOutput: undefined,
       failureReason: expect.stringContaining("structured analysis output"),
     });
+  });
+});
+
+describe("agent persistence data", () => {
+  it("does not require structured result fields when marking an analysis failed", () => {
+    const data = failedAnalysisData("Memory recall failed. Please retry.");
+
+    expect(data).toEqual({
+      status: "failed",
+      category: null,
+      failureReason: "Memory recall failed. Please retry.",
+    });
+    expect(data).not.toHaveProperty("biases");
+    expect(data).not.toHaveProperty("missedAlternatives");
+    expect(data).not.toHaveProperty("premortemRisks");
+    expect(data).not.toHaveProperty("keyAssumptions");
+    expect(data).not.toHaveProperty("warningSigns");
   });
 });

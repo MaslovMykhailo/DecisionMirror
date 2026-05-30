@@ -45,6 +45,7 @@ configuration through LangChain runnable config.
 - **WHEN** the analyze node invokes the provider wrapper
 - **THEN** the wrapper receives the decision situation, chosen decision, optional reasoning,
   locale, and prior-pattern context
+- **AND** the locale comes from the processing analysis row for the current run
 - **AND** the provider request asks the model to produce free-form prose in that locale
 
 #### Scenario: Static prefix is cacheable

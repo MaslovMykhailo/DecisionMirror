@@ -1,5 +1,6 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { Locale } from "@/lib/i18n/routing";
 import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -23,9 +24,9 @@ const messages = {
   },
 };
 
-function renderWithIntl(component: React.ReactNode) {
+function renderWithIntl(component: React.ReactNode, locale: Locale = "en") {
   return render(
-    <NextIntlClientProvider locale="en" messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={messages}>
       {component}
     </NextIntlClientProvider>,
   );
@@ -82,16 +83,17 @@ describe("create decision form", () => {
     expect(submittedPayload(fetchMock)).toEqual({
       situation: "Choosing a new role",
       decision: "Accept the offer",
+      locale: "en",
     });
     expect(screen.getByText("Decision saved. Analysis is starting.")).toBeDefined();
   });
 
-  it("submits trimmed values from all fields", async () => {
+  it("submits trimmed values and active locale from all fields", async () => {
     const fetchMock = mockSuccessfulCreate();
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
 
-    renderWithIntl(<CreateDecisionForm />);
+    renderWithIntl(<CreateDecisionForm />, "uk");
     await user.type(screen.getByLabelText("Situation"), "  Move cities  ");
     await user.type(screen.getByLabelText("Decision"), "  Stay remote  ");
     await user.type(screen.getByLabelText("Reasoning (optional)"), "  family support  ");
@@ -102,6 +104,7 @@ describe("create decision form", () => {
       situation: "Move cities",
       decision: "Stay remote",
       reasoning: "family support",
+      locale: "uk",
     });
   });
 });

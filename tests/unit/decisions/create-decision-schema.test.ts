@@ -25,6 +25,7 @@ describe("create-decision input schema", () => {
       data: {
         situation: "Accept a new role",
         decision: "Take the offer",
+        locale: "en",
       },
     });
     if (result.success) {
@@ -45,7 +46,33 @@ describe("create-decision input schema", () => {
         situation: "Move cities",
         decision: "Stay remote",
         reasoning: undefined,
+        locale: "en",
       },
+    });
+  });
+
+  it("accepts supported locales and rejects unsupported locales", () => {
+    const supported = createDecisionInputSchema.safeParse({
+      situation: "Змінити роботу",
+      decision: "Поки залишитися",
+      locale: "uk",
+    });
+    const unsupported = createDecisionInputSchema.safeParse({
+      situation: "Change jobs",
+      decision: "Stay for now",
+      locale: "fr",
+    });
+
+    expect(supported).toMatchObject({
+      success: true,
+      data: {
+        locale: "uk",
+      },
+    });
+    expect(unsupported.success).toBe(false);
+    if (unsupported.success) return;
+    expect(unsupported.error.flatten().fieldErrors).toMatchObject({
+      locale: expect.arrayContaining(["locale_unsupported"]),
     });
   });
 

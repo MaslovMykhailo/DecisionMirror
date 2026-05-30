@@ -105,6 +105,8 @@ model Analysis {
   decisionId    String
   version       Int
   status        AnalysisStatus   @default(processing)
+  /// Locale selected for this analysis run; used for generated prose.
+  locale        String           @default("en")
   category      DecisionCategory?
   biases        Json?
   missedAlternatives Json?

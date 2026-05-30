@@ -42,14 +42,14 @@ The LLM is mocked/stubbed in all gate tests — only evals (12.5) call a real mo
 - [ ] 5.3 Author the analysis prompt/instruction templates (locale-aware; selects from the controlled taxonomies)
 - [ ] 5.4 Build the LangGraph.js `StateGraph`: nodes `load-memory → analyze → validate → persist+remember` with a `fail` branch; compile behind `runAgent(decisionId)`
 - [ ] 5.5 `validate` node: parse LLM output against the Zod contract; on invalid route to `fail`
-- [ ] 5.6 `persist` path: write structured results, set status `ready`; `fail` path: set status `failed` with a human-readable reason
+- [x] 5.6 `persist` path: write structured results, set status `ready`; `fail` path: set status `failed` with a human-readable reason
 - [ ] 5.7 Implement the status query endpoint used by the client for polling
 
 ## 6. Agent memory (pgvector + checkpointer)
 
 - [ ] 6.1 Implement the embeddings wrapper (Voyage `voyage-3` default; OpenAI alternative behind the same interface)
-- [ ] 6.2 `load-memory` node: embed the new decision, run a `userId`-scoped pgvector top-k similarity search, summarize matches into "prior patterns" context (no-op when empty)
-- [ ] 6.3 `remember` step: after a `ready` result, embed and store a memory record for future recall (scoped by `userId`)
+- [x] 6.2 `load-memory` node: embed the new decision, run a `userId`-scoped pgvector top-k similarity search, summarize matches into "prior patterns" context (no-op when empty)
+- [x] 6.3 `remember` step: after a `ready` result, embed and store a memory record for future recall (scoped by `userId`)
 - [ ] 6.4 Wire the LangGraph `PostgresSaver` checkpointer so runs can resume on retry
 - [ ] 6.5 Verify cross-user isolation of memory recall (no cross-user leakage)
 
