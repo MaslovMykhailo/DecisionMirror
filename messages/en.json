@@ -1,0 +1,48 @@
+{
+  "Common": {
+    "appName": "Decision Mirror",
+    "tagline": "See a choice from the outside before it becomes a regret.",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "Nav": {
+    "home": "Home",
+    "history": "History",
+    "dashboard": "Dashboard"
+  },
+  "LanguageSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "uk": "Ukrainian"
+  },
+  "UXState": {
+    "loading": "Loading…",
+    "analyzing": "Analyzing your decision…",
+    "notReady": "Your analysis isn't ready yet.",
+    "error": "Something went wrong.",
+    "empty": "Nothing here yet."
+  },
+  "Taxonomy": {
+    "category": {
+      "career": "Career",
+      "finance": "Finance",
+      "relationships": "Relationships",
+      "health": "Health",
+      "education": "Education",
+      "business": "Business",
+      "lifestyle": "Lifestyle",
+      "other": "Other"
+    },
+    "bias": {
+      "anchoring": "Anchoring",
+      "confirmation_bias": "Confirmation bias",
+      "sunk_cost_fallacy": "Sunk cost fallacy",
+      "overconfidence": "Overconfidence",
+      "availability_heuristic": "Availability heuristic",
+      "loss_aversion": "Loss aversion",
+      "status_quo_bias": "Status quo bias",
+      "optimism_bias": "Optimism bias"
+    }
+  }
+}

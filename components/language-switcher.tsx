@@ -1,0 +1,45 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+import { useTransition } from "react";
+
+import { usePathname, useRouter } from "@/lib/i18n/navigation";
+import { routing } from "@/lib/i18n/routing";
+import type { Locale } from "@/lib/i18n/routing";
+import { cn } from "@/lib/utils";
+
+/**
+ * Switches the active interface language. The navigation router updates the
+ * locale segment and next-intl persists the choice in the locale cookie, so the
+ * preference survives across sessions.
+ */
+export function LanguageSwitcher({ className }: { className?: string }) {
+  const t = useTranslations("LanguageSwitcher");
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <label className={cn("inline-flex items-center gap-2 text-sm", className)}>
+      <span className="text-muted-foreground">{t("label")}</span>
+      <select
+        value={locale}
+        disabled={isPending}
+        aria-label={t("label")}
+        className="bg-background rounded-md border px-2 py-1"
+        onChange={(event) => {
+          startTransition(() => {
+            router.replace(pathname, { locale: event.target.value as Locale });
+          });
+        }}
+      >
+        {routing.locales.map((option) => (
+          <option key={option} value={option}>
+            {t(option)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}

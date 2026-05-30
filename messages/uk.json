@@ -1,0 +1,48 @@
+{
+  "Common": {
+    "appName": "Дзеркало рішень",
+    "tagline": "Погляньте на вибір збоку, перш ніж він стане жалем.",
+    "retry": "Спробувати ще раз",
+    "cancel": "Скасувати",
+    "save": "Зберегти"
+  },
+  "Nav": {
+    "home": "Головна",
+    "history": "Історія",
+    "dashboard": "Панель"
+  },
+  "LanguageSwitcher": {
+    "label": "Мова",
+    "en": "Англійська",
+    "uk": "Українська"
+  },
+  "UXState": {
+    "loading": "Завантаження…",
+    "analyzing": "Аналізуємо ваше рішення…",
+    "notReady": "Ваш аналіз ще не готовий.",
+    "error": "Щось пішло не так.",
+    "empty": "Тут поки нічого немає."
+  },
+  "Taxonomy": {
+    "category": {
+      "career": "Кар'єра",
+      "finance": "Фінанси",
+      "relationships": "Стосунки",
+      "health": "Здоров'я",
+      "education": "Освіта",
+      "business": "Бізнес",
+      "lifestyle": "Спосіб життя",
+      "other": "Інше"
+    },
+    "bias": {
+      "anchoring": "Ефект прив'язки",
+      "confirmation_bias": "Упередження підтвердження",
+      "sunk_cost_fallacy": "Хибність безповоротних витрат",
+      "overconfidence": "Надмірна впевненість",
+      "availability_heuristic": "Евристика доступності",
+      "loss_aversion": "Уникнення втрат",
+      "status_quo_bias": "Упередження статус-кво",
+      "optimism_bias": "Упередження оптимізму"
+    }
+  }
+}
