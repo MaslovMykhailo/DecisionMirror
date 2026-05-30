@@ -134,4 +134,38 @@ pnpm lint && pnpm typecheck # what CI will also run
 Environment is documented in `.env.example` (committed) and loaded from `.env.local`
 (git-ignored). Required keys: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`,
 `ANTHROPIC_API_KEY`, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`.
+
+---
+
+## Project MCP allowlist
+
+MCP servers are build- and operate-time tooling for agents working on this repository. They
+are not runtime dependencies of the Decision Mirror app or the LangGraph.js agent.
+
+Project-scoped MCP config lives in:
+
+- `.mcp.json` for Claude Code
+- `.cursor/mcp.json` for Cursor
+- `.codex/config.toml` for Codex CLI / IDE extension
+
+Only these MCP servers are in scope:
+
+| Server | Purpose | Auth / setup |
+|--------|---------|--------------|
+| `context7` | Current docs for fast-moving libraries | `CONTEXT7_API_KEY` header |
+| `prisma` | Local Prisma schema/database workflows | Local `npx -y prisma mcp` |
+| `shadcn` | shadcn/ui registry browse/search/install | Local `npx shadcn@latest mcp` |
+| `playwright` | Browser automation for e2e authoring/debugging | Local `npx -y @playwright/mcp@latest` |
+| `vercel` | Deployments, build logs, Vercel project context | Remote OAuth at `https://mcp.vercel.com` |
+| `sentry` | Issue/error investigation | Remote OAuth at `https://mcp.sentry.dev/mcp` |
+| `posthog` | Product analytics, flags, error/product triage | Remote OAuth at `https://mcp.posthog.com/mcp` |
+| `langsmith` | Agent traces, datasets, experiments, eval support | `LANGSMITH_API_KEY` header |
+| `next-devtools` | Next.js runtime/dev diagnostics | Local `npx -y next-devtools-mcp@latest` |
+
+Do not configure other MCP servers for this project unless the architecture changes. GitHub
+and Neon are intentionally not configured even though they can be useful in other stacks.
+
+Privacy rule: Sentry and PostHog MCP usage must never send or surface raw decision text.
+LangSmith traces can include decision content by design; keep LangSmith MCP use to scoped
+development and eval work.
 </content>

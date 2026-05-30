@@ -63,7 +63,26 @@ See [architecture/05-testing.md](./architecture/05-testing.md) for the full pyra
   bypass hooks.
 - Conventional Commits.
 
-## 7. Before you finish a change
+## 7. MCP allowlist
+
+Use the next project MCP servers configured in `.mcp.json`, `.cursor/mcp.json`, and
+`.codex/config.toml`:
+
+- `context7`
+- `prisma`
+- `shadcn`
+- `playwright`
+- `vercel`
+- `sentry`
+- `posthog`
+- `langsmith`
+- `next-devtools`
+
+Privacy reminder: Sentry and PostHog MCP use must preserve the telemetry rule above. The
+LangSmith MCP can expose raw decision content through traces, so use it only in team-scoped
+dev/eval contexts.
+
+## 8. Before you finish a change
 
 - [ ] New/changed behaviour has tests, written test-first.
 - [ ] `pnpm lint && pnpm typecheck && pnpm test` pass locally.

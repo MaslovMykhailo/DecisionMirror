@@ -1,0 +1,118 @@
+// Decision Mirror — relational schema (single source of truth for Prisma-managed tables).
+//
+// Prisma 7 uses the Rust-free `prisma-client` generator + a driver adapter (see
+// lib/db/client.ts). The pgvector extension and the long-term-memory table are NOT modelled
+// here — they are created by a raw-SQL migration (prisma/migrations/*_pgvector_memory),
+// because pgvector's vector type lives outside Prisma's typed layer.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/db/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Lifecycle of a single analysis run. Drives polling and the retry/re-analyze flows.
+enum AnalysisStatus {
+  processing
+  ready
+  failed
+}
+
+/// Fixed decision categories. Mirrors DECISION_CATEGORIES in @/lib/taxonomy (the source of
+/// truth for application code); kept in sync as a DB-level enum for query/aggregation safety.
+enum DecisionCategory {
+  career
+  finance
+  relationships
+  health
+  education
+  business
+  lifestyle
+  other
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  /// bcrypt hash for the Credentials provider; null for OAuth-only users.
+  passwordHash  String?
+  image         String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts  Account[]
+  sessions  Session[]
+  decisions Decision[]
+}
+
+/// Auth.js (NextAuth) OAuth account link.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// Auth.js (NextAuth) session record.
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Decision {
+  id        String   @id @default(cuid())
+  userId    String
+  situation String
+  decision  String
+  reasoning String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analyses Analysis[]
+
+  @@index([userId])
+}
+
+/// Append-only analysis versions. Re-analysis inserts a new row with an incremented
+/// `version` rather than mutating; the "current" analysis is the newest `ready` version.
+model Analysis {
+  id            String           @id @default(cuid())
+  decisionId    String
+  version       Int
+  status        AnalysisStatus   @default(processing)
+  category      DecisionCategory?
+  /// Human-readable reason set only when status = failed (retryable).
+  failureReason String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  decision Decision @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  @@unique([decisionId, version])
+  @@index([decisionId])
+}

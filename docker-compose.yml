@@ -1,0 +1,24 @@
+# Local PostgreSQL with the pgvector extension — same engine + extension as production,
+# so relational, vector, and checkpointer behaviour is real in local dev and CI.
+#   docker compose up -d   →   then `pnpm db:migrate`
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: decision-mirror-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: decision_mirror
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d decision_mirror"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:

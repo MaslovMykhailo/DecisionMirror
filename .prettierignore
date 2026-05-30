@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+build
+coverage
+pnpm-lock.yaml
+lib/db/generated
+prisma/migrations
+openspec
+architecture
+*.md

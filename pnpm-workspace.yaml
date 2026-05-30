@@ -1,0 +1,9 @@
+# Approved post-install build scripts. pnpm blocks build scripts by default; these are the
+# trusted dependencies whose native/codegen build steps Decision Mirror relies on.
+allowBuilds:
+  "@prisma/client": true
+  "@prisma/engines": true
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true

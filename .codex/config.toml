@@ -1,8 +1,34 @@
 [mcp_servers.context7]
-type = "http"
 url = "https://mcp.context7.com/mcp"
-  [mcp_servers.context7.http_headers]
+  [mcp_servers.context7.env_http_headers]
   CONTEXT7_API_KEY = "CONTEXT7_API_KEY"
+
+[mcp_servers.prisma]
+command = "npx"
+args = [ "-y", "prisma", "mcp" ]
+
+[mcp_servers.shadcn]
+command = "npx"
+args = [ "shadcn@latest", "mcp" ]
+
+[mcp_servers.playwright]
+command = "npx"
+args = [ "-y", "@playwright/mcp@latest" ]
+
+[mcp_servers.vercel]
+url = "https://mcp.vercel.com"
+
+[mcp_servers.sentry]
+command = "npx"
+args = [ "-y", "mcp-remote@latest", "https://mcp.sentry.dev/mcp" ]
+
+[mcp_servers.posthog]
+url = "https://mcp.posthog.com/mcp"
+
+[mcp_servers.langsmith]
+url = "https://langsmith-mcp-server.onrender.com/mcp"
+  [mcp_servers.langsmith.env_http_headers]
+  "LANGSMITH-API-KEY" = "LANGSMITH_API_KEY"
 
 [mcp_servers.next-devtools]
 command = "npx"
