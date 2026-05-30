@@ -22,6 +22,35 @@
     "dark": "Dark",
     "system": "System"
   },
+  "Auth": {
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "optional": "optional",
+    "loginTitle": "Log in",
+    "signupTitle": "Create account",
+    "loginSubmit": "Log in",
+    "signupSubmit": "Create account",
+    "loginLink": "Log in",
+    "loginPrompt": "Already have an account?",
+    "signupLink": "Create account",
+    "signupPrompt": "New to Decision Mirror?",
+    "google": "Continue with Google",
+    "googleSignup": "Sign up with Google",
+    "logout": "Log out",
+    "errors": {
+      "email_invalid": "Enter a valid email.",
+      "email_already_registered": "An account already uses this email.",
+      "password_required": "Enter your password.",
+      "password_min_length": "Use at least 8 characters.",
+      "password_letter_required": "Use at least one letter.",
+      "password_number_required": "Use at least one number.",
+      "password_symbol_required": "Use at least one symbol.",
+      "invalid_email_or_password": "Email or password is incorrect.",
+      "provider_conflict": "Use the sign-in method already linked to this email.",
+      "signup_failed": "We could not create your account."
+    }
+  },
   "UXState": {
     "loading": "Loading…",
     "analyzing": "Analyzing your decision…",

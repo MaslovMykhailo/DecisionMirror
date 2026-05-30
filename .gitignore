@@ -2,6 +2,7 @@
 node_modules/
 .pnp
 .pnp.*
+.pnpm-store/
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
@@ -35,6 +36,7 @@ lib/db/generated/
 # Testing / coverage
 coverage/
 .nyc_output/
+test-results/
 
 # Logs
 *.log
@@ -65,3 +67,6 @@ Thumbs.db
 
 # Coding agents
 .claude/settings.local.json
+
+# MCP
+.playwright-mcp/

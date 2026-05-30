@@ -22,6 +22,35 @@
     "dark": "Темна",
     "system": "Системна"
   },
+  "Auth": {
+    "email": "Електронна пошта",
+    "password": "Пароль",
+    "name": "Ім'я",
+    "optional": "необов'язково",
+    "loginTitle": "Увійти",
+    "signupTitle": "Створити акаунт",
+    "loginSubmit": "Увійти",
+    "signupSubmit": "Створити акаунт",
+    "loginLink": "Увійти",
+    "loginPrompt": "Уже маєте акаунт?",
+    "signupLink": "Створити акаунт",
+    "signupPrompt": "Вперше в Дзеркалі рішень?",
+    "google": "Продовжити з Google",
+    "googleSignup": "Зареєструватися з Google",
+    "logout": "Вийти",
+    "errors": {
+      "email_invalid": "Введіть коректну електронну адресу.",
+      "email_already_registered": "Акаунт із цією адресою вже існує.",
+      "password_required": "Введіть пароль.",
+      "password_min_length": "Використайте щонайменше 8 символів.",
+      "password_letter_required": "Додайте щонайменше одну літеру.",
+      "password_number_required": "Додайте щонайменше одну цифру.",
+      "password_symbol_required": "Додайте щонайменше один символ.",
+      "invalid_email_or_password": "Електронна адреса або пароль неправильні.",
+      "provider_conflict": "Скористайтеся способом входу, вже пов'язаним із цією адресою.",
+      "signup_failed": "Не вдалося створити акаунт."
+    }
+  },
   "UXState": {
     "loading": "Завантаження…",
     "analyzing": "Аналізуємо ваше рішення…",
