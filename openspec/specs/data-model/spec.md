@@ -5,9 +5,7 @@
 Defines the persistence model for Decision Mirror: a Prisma relational schema of user-owned
 decisions and append-only analysis versions, a pgvector long-term-memory table, and the
 local/migratable database provisioning that brings it all up from a clean state.
-
 ## Requirements
-
 ### Requirement: Relational schema with user-owned decisions and analyses
 
 The system SHALL define, via Prisma, the relational models `User`, `Account`, `Session`,
@@ -82,3 +80,31 @@ migrations from a clean state. `DATABASE_URL` SHALL be the single connection con
 
 - **WHEN** a contributor runs `docker compose up -d` and the project's migrate command against an empty database
 - **THEN** all relational tables, the status enum, and the pgvector memory table are created without error
+
+### Requirement: Structured analysis result storage
+
+The `Analysis` model SHALL be able to persist the structured sections produced by the agent
+output contract: biases with explanations, missed alternatives, premortem risks, key
+assumptions, and warning signs. These fields MUST support existing processing rows and
+failed rows that do not have a ready result yet.
+
+#### Scenario: Ready analysis stores structured sections
+
+- **WHEN** a valid agent output is persisted as a ready analysis
+- **THEN** the analysis row stores the category and every structured result section from the
+  parsed output
+- **AND** the stored category remains constrained by the database category enum
+
+#### Scenario: Failed analysis can omit structured result
+
+- **WHEN** an analysis is persisted with `status = failed`
+- **THEN** the analysis row can store a human-readable failure reason without storing ready
+  structured result sections
+
+#### Scenario: Existing processing analyses remain migratable
+
+- **WHEN** the structured result storage migration is applied to a database with existing
+  processing analyses
+- **THEN** the migration succeeds without requiring immediate structured result values for
+  those rows
+

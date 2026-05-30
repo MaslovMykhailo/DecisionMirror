@@ -12,7 +12,7 @@ The LLM is mocked/stubbed in all gate tests — only evals (12.5) call a real mo
 - [ ] 1.3 Initialize **shadcn/ui** (Radix + Tailwind), define the CSS-variable design-token layer for light/dark
 - [ ] 1.4 Add and configure Prisma; define `User`, `Account`, `Session`, `Decision`, and `Analysis` (version) models with relations and the status enum
 - [ ] 1.5 Enable the **pgvector** extension and the long-term-memory table; provision local (docker compose) and hosted PostgreSQL; wire `DATABASE_URL` and run the initial migration
-- [ ] 1.6 Add environment configuration (`.env.example`): `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`, `ANTHROPIC_API_KEY` + model, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`; document all required vars
+- [ ] 1.6 Add environment configuration (`.env.example`): `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`, `OPENAI_API_KEY` + model, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`; document all required vars
 - [ ] 1.7 Define shared TypeScript types and the category enum + cognitive-bias catalog as a single source of truth (Zod-backed)
 
 ## 2. Internationalization foundation
@@ -38,7 +38,7 @@ The LLM is mocked/stubbed in all gate tests — only evals (12.5) call a real mo
 ## 5. Agentic analysis pipeline (LangGraph.js, in-process)
 
 - [ ] 5.1 Define the LLM output contract: a strict Zod schema (`agent/schema.ts`) for category, biases (+explanations), missed alternatives, premortem risks, key assumptions, warning signs — **test-first**
-- [ ] 5.2 Implement the Anthropic Claude provider wrapper with structured/tool output and prompt caching of the static prefix (locale passed in for free-form output)
+- [ ] 5.2 Implement the OpenAI provider wrapper with Responses API Structured Outputs and prompt-cache-friendly static prefixes (locale passed in for free-form output)
 - [ ] 5.3 Author the analysis prompt/instruction templates (locale-aware; selects from the controlled taxonomies)
 - [ ] 5.4 Build the LangGraph.js `StateGraph`: nodes `load-memory → analyze → validate → persist+remember` with a `fail` branch; compile behind `runAgent(decisionId)`
 - [ ] 5.5 `validate` node: parse LLM output against the Zod contract; on invalid route to `fail`

@@ -112,7 +112,7 @@ The agent is a compiled **`StateGraph`** from `@langchain/langgraph`, invoked in
                   └──────┬───────┘  (pgvector) → compact "prior patterns" context
                          ▼
                   ┌──────────────┐
-                  │   analyze    │  call Claude with structured-output tool;
+                  │   analyze    │  call OpenAI with Structured Outputs;
                   └──────┬───────┘  inputs: situation, decision, reasoning, locale, prior patterns
                          ▼
                   ┌──────────────┐
@@ -128,10 +128,12 @@ The agent is a compiled **`StateGraph`** from `@langchain/langgraph`, invoked in
                END
 ```
 
-- **LLM:** Anthropic Claude via a single provider wrapper. Structured output is enforced
-  (tool/JSON schema), parsed with **Zod** before persistence; a validation failure marks the
-  analysis `failed` (and therefore retryable). Static system/instruction prefix uses
-  **prompt caching**. Model is env-configurable; demo defaults to a fast/cheap model.
+- **LLM:** OpenAI via a single provider wrapper. Structured output is enforced through the
+  Responses API (JSON schema / Zod helper), parsed with **Zod** before persistence; a
+  validation failure marks the analysis `failed` (and therefore retryable). Prompt
+  construction keeps the static system/instruction prefix and schema before dynamic decision
+  content so OpenAI prompt caching can apply. Model is env-configurable; demo defaults to a
+  fast/cheap model.
 - **Controlled taxonomies:** `category` is a fixed enum; biases are a fixed catalog of 8. The
   model must select from these, keeping filtering and dashboard aggregation deterministic.
 - **Why in-process LangGraph (vs a Python service):** keeps one language and one deployment,
@@ -161,8 +163,8 @@ after `ready`:
   embed + store a memory record for this decision  (so future decisions can recall it)
 ```
 
-- **Embeddings:** Voyage AI (`voyage-3`, pairs with Anthropic) by default; OpenAI
-  `text-embedding-3-small` is a drop-in alternative behind the same embeddings wrapper.
+- **Embeddings:** Voyage AI (`voyage-3`) by default; OpenAI `text-embedding-3-small` is a
+  drop-in alternative behind the same embeddings wrapper.
 - **Isolation:** every memory query is filtered by `userId` — no cross-user recall, ever.
 - **Phasing:** this is the one feature beyond a "polished demo." The pipeline works fully
   without it (the `load-memory` node degrades to a no-op when no memories exist), so memory

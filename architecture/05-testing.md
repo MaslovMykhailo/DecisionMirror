@@ -127,7 +127,7 @@ real/seed runs ─▶ LangSmith dataset ─▶ scorers ─▶ quality dashboard 
 | Unit | — (no I/O) | — (pure logic only) | — |
 | Integration | **real** (Testcontainers) | **mocked** (canned payloads) | mocked |
 | E2E | **real** (test DB) | **stubbed** (fake provider) | stubbed |
-| Evals | real/seed | **real Claude** | real |
+| Evals | real/seed | **real OpenAI model** | real |
 
 The one rule that keeps the suite trustworthy: **only evals call a real model.**
 

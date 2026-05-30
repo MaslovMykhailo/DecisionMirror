@@ -157,7 +157,8 @@ pnpm lint && pnpm typecheck # what CI will also run
 
 Environment is documented in `.env.example` (committed) and loaded from `.env.local`
 (git-ignored). Required keys: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`,
-`ANTHROPIC_API_KEY`, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`.
+`OPENAI_API_KEY`, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`, and
+LangSmith tracing/project variables when tracing is enabled.
 
 ---
 

@@ -106,6 +106,11 @@ model Analysis {
   version       Int
   status        AnalysisStatus   @default(processing)
   category      DecisionCategory?
+  biases        Json?
+  missedAlternatives Json?
+  premortemRisks Json?
+  keyAssumptions Json?
+  warningSigns  Json?
   /// Human-readable reason set only when status = failed (retryable).
   failureReason String?
   createdAt     DateTime         @default(now())

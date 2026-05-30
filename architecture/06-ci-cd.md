@@ -70,9 +70,10 @@ merge to main      ─▶  Vercel Production Deployment
 | Production | merge to main | hosted Postgres (Neon/Vercel) | Vercel env (Production scope) |
 
 Required secrets (mirrored across CI / Vercel as applicable): `DATABASE_URL`, `AUTH_SECRET`,
-`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `ANTHROPIC_API_KEY`, embeddings key, `SENTRY_DSN`
-(+ auth token for source-map upload), `POSTHOG_KEY`, `LANGSMITH_API_KEY`. Documented in
-`.env.example`; never committed with values.
+`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `OPENAI_API_KEY`, embeddings key, `SENTRY_DSN`
+(+ auth token for source-map upload), `POSTHOG_KEY`, `LANGSMITH_API_KEY`, and LangSmith
+tracing/project variables when tracing is enabled. Documented in `.env.example`; never
+committed with values.
 
 ---
 

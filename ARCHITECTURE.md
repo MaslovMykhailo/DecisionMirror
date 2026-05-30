@@ -80,7 +80,7 @@ Cross-cutting: Sentry (errors/perf) · PostHog (product + business metrics) · L
 | Agentic service | **LangGraph.js, in-process** | One deploy, all TypeScript, reuses `after()`/`waitUntil` | [02](./architecture/02-stack.md) |
 | Agent memory | **Cross-decision long-term via pgvector** (same Postgres) + checkpointer for run state | Richer reflections that recall prior patterns, no new infra | [02](./architecture/02-stack.md) |
 | Auth | Auth.js v5 — **Google OAuth + email/password** | "Real auth" with Google sign-in; both behind one interface | [02](./architecture/02-stack.md) |
-| LLM | Anthropic Claude, structured output, prompt caching | Strong structured-output ergonomics; project default | [02](./architecture/02-stack.md) |
+| LLM | OpenAI Responses API, Structured Outputs, prompt caching | Strong structured-output ergonomics; project default | [02](./architecture/02-stack.md) |
 | UI kit | **shadcn/ui** (Tailwind + Radix) | Pairs with next-themes + Recharts; i18n via next-intl | [03](./architecture/03-ui-ux.md) |
 | i18n | next-intl, **English + Ukrainian** | UI localized; LLM free-form output generated in user's locale | [03](./architecture/03-ui-ux.md) |
 | Errors/perf | Sentry | Client + server + edge coverage in one SDK | [04](./architecture/04-observability.md) |

@@ -33,7 +33,8 @@ See [architecture/05-testing.md](./architecture/05-testing.md) for the full pyra
 
 - The **LLM provider is always mocked/stubbed** in unit, integration, and e2e tests. Only
   **evals** call a real model, and evals are not a commit gate.
-- Tests must be deterministic and runnable offline. No network to real Claude/Voyage in CI.
+- Tests must be deterministic and runnable offline. No network to real OpenAI or embeddings
+  providers in CI.
 
 ## 3. Respect the boundaries
 

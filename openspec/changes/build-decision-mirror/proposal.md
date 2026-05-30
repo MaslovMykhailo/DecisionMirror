@@ -33,7 +33,7 @@ People make important life and work decisions under cognitive pressure and rarel
 ## Impact
 
 - New full-stack application (greenfield): web frontend, API/server routes, database, and an in-process LangGraph.js agent integrating an LLM provider.
-- New external dependencies and env-managed keys: an LLM provider (Anthropic Claude), an embeddings provider (Voyage AI, OpenAI as alternative), Google OAuth credentials, and observability services (Sentry, PostHog, LangSmith).
+- New external dependencies and env-managed keys: an LLM provider (OpenAI), an embeddings provider (Voyage AI, OpenAI as alternative), Google OAuth credentials, and observability services (Sentry, PostHog, LangSmith).
 - New persistent datastore (PostgreSQL) for users, decisions, and analysis versions, plus a `pgvector` extension for long-term agent memory and a LangGraph checkpointer for run state — all on the same instance.
 - New cross-cutting observability: Sentry (errors/performance), PostHog (product/business analytics), and LangSmith (agent tracing + evals), with decision text excluded from Sentry/PostHog payloads.
 - Deployment target: a public GitHub repository with a GitHub Actions quality gate plus a hosted demo (Vercel), with a detailed README covering setup, architecture, internationalization, observability, and environment variables.

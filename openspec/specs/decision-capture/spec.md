@@ -2,7 +2,6 @@
 
 ## Purpose
 Define how authenticated users capture private decision input, share create-decision validation across client and server, persist owned decisions with an initial processing analysis, and schedule analysis without blocking the create response.
-
 ## Requirements
 ### Requirement: Authenticated decision capture form
 
@@ -82,8 +81,8 @@ ignore any client-supplied owner identifiers.
 
 The system SHALL return the create-decision response after persistence without waiting for
 analysis work to complete. The route-level background scheduling seam MUST receive the
-created `decisionId` after a successful create, but this change MUST NOT import, implement,
-or call `runAgent(decisionId)`.
+created `decisionId` after a successful create and MUST invoke `runAgent(decisionId)` inside
+the scheduled callback.
 
 #### Scenario: Successful create response is immediate
 
@@ -92,14 +91,16 @@ or call `runAgent(decisionId)`.
   initial `analysisId`
 - **AND** the response is not delayed by the duration of scheduled analysis work
 
-#### Scenario: Background scheduling receives decision ID
+#### Scenario: Background scheduling invokes runAgent
 
 - **WHEN** a valid create-decision request succeeds
 - **THEN** the route-level background scheduling seam is registered with the created
   `decisionId`
+- **AND** the scheduled callback invokes `runAgent(decisionId)`
 - **AND** the scheduled callback is independent from the persistence transaction
 
 #### Scenario: Invalid create does not schedule analysis
 
 - **WHEN** create-decision validation fails or authentication fails
 - **THEN** the system does not schedule background analysis work
+
