@@ -83,6 +83,17 @@
     "sortComplexity": "Complexity",
     "openDetail": "Open decision"
   },
+  "AnalyticsDashboard": {
+    "title": "Decision dashboard",
+    "description": "Patterns across ready analyses.",
+    "categoryChartTitle": "Category frequency",
+    "categoryChartDescription": "Ready analyses grouped by decision category.",
+    "biasChartTitle": "Cognitive-bias frequency",
+    "biasChartDescription": "Biases found across ready analyses.",
+    "emptyTitle": "No ready analyses yet",
+    "emptyDescription": "Completed analyses will appear here once decisions finish processing.",
+    "countLabel": "{count, plural, one {# analysis} other {# analyses}}"
+  },
   "DecisionDetail": {
     "backToHistory": "Back to history",
     "originalInput": "Original input",

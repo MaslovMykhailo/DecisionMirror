@@ -1,4 +1,4 @@
-import { History } from "lucide-react";
+import { BarChart3, History } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { LogoutButton } from "@/components/auth/logout-button";
@@ -23,6 +23,12 @@ export default function Home() {
             <p className="text-muted-foreground max-w-xl text-sm">{t("tagline")}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/analytics">
+                <BarChart3 />
+                {navT("dashboard")}
+              </Link>
+            </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/decisions">
                 <History />

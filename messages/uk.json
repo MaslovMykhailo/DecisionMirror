@@ -83,6 +83,17 @@
     "sortComplexity": "Складність",
     "openDetail": "Відкрити рішення"
   },
+  "AnalyticsDashboard": {
+    "title": "Панель рішень",
+    "description": "Патерни серед готових аналізів.",
+    "categoryChartTitle": "Частота категорій",
+    "categoryChartDescription": "Готові аналізи, згруповані за категоріями рішень.",
+    "biasChartTitle": "Частота когнітивних упереджень",
+    "biasChartDescription": "Упередження, знайдені в готових аналізах.",
+    "emptyTitle": "Готових аналізів ще немає",
+    "emptyDescription": "Завершені аналізи з'являться тут після обробки рішень.",
+    "countLabel": "{count, plural, one {# аналіз} few {# аналізи} many {# аналізів} other {# аналізу}}"
+  },
   "DecisionDetail": {
     "backToHistory": "Назад до історії",
     "originalInput": "Початкові дані",
