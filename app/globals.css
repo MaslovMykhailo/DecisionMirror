@@ -4,58 +4,67 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
- * Design tokens (shadcn/ui style) as CSS variables for light and dark themes.
- * Feature components consume these via Tailwind utilities (bg-background, text-foreground, …)
- * rather than hard-coded colors. Add new tokens here, never inline hex values.
+ * DecisionMirror design tokens (shadcn/ui shape) as OKLCH CSS variables for the
+ * light (:root) and dark (.dark) themes. Visual language is Preply-inspired:
+ * near-black ink primary, warm-neutral surfaces, moderate ~8px rounding, and
+ * restrained accent pops (sky / mint / pink / yellow).
+ *
+ * Feature components consume these via Tailwind utilities (bg-background,
+ * text-foreground, …) rather than hard-coded colors. Add new tokens here, never
+ * inline hex values. See architecture/03-ui-ux.md for the full kit.
  */
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem; /* ~8px moderate corner (Preply-inspired) */
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --background: oklch(1 0 0); /* #FFFFFF base */
+  --foreground: oklch(0.17 0.012 285); /* #121117 ink */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.17 0.012 285);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.17 0.012 285);
+  --primary: oklch(0.17 0.012 285); /* ink */
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.97 0.004 90); /* warm cream #FAF9F5 */
+  --secondary-foreground: oklch(0.17 0.012 285);
+  --muted: oklch(0.97 0.004 90);
+  --muted-foreground: oklch(0.44 0.012 285); /* ~#4D4C5C */
+  --accent: oklch(0.55 0.17 252); /* deepened sky — AA white-on-accent (4.87:1) */
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.58 0.21 18); /* warm red */
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(0.9 0.005 285); /* #DCDCE5 */
+  --input: oklch(0.9 0.005 285);
+  --ring: oklch(0.55 0.17 252); /* sky focus ring */
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: oklch(0.17 0.012 285); /* near-ink */
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.21 0.012 285);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.21 0.012 285);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.98 0 0); /* inverted: light primary on dark */
+  --primary-foreground: oklch(0.17 0.012 285);
+  --secondary: oklch(0.27 0.01 285);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.27 0.01 285);
+  --muted-foreground: oklch(0.72 0.012 285);
+  --accent: oklch(0.7 0.15 252); /* brighter sky for dark surfaces */
+  --accent-foreground: oklch(0.17 0.012 285);
+  --destructive: oklch(0.7 0.19 18);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.7 0.15 252);
 }
 
 /* Expose the tokens to Tailwind's utility generator (v4 CSS-first config). */
 @theme inline {
+  /* Fonts — self-hosted by next/font; variables set on <html>. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -76,10 +85,47 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
+  /* Brand accent palette (Preply-inspired) — highlights, illustrations, charts. */
+  --color-brand-sky: oklch(0.62 0.17 252); /* #2885FD */
+  --color-brand-mint: oklch(0.82 0.13 175); /* #3DDABE */
+  --color-brand-pink: oklch(0.74 0.16 5); /* #FF7AAC */
+  --color-brand-yellow: oklch(0.9 0.16 95); /* #FFDF3D */
+
+  /* Data-viz series — Recharts reads --color-chart-*; reuse the brand accents. */
+  --color-chart-1: var(--color-brand-sky);
+  --color-chart-2: var(--color-brand-mint);
+  --color-chart-3: var(--color-brand-pink);
+  --color-chart-4: var(--color-brand-yellow);
+  --color-chart-5: var(--primary);
+
+  /* Type scale — paired size/line-height tokens (display → caption). */
+  --text-display: 3rem;
+  --text-display--line-height: 1.1;
+  --text-h1: 2.25rem;
+  --text-h1--line-height: 1.15;
+  --text-h2: 1.875rem;
+  --text-h2--line-height: 1.2;
+  --text-h3: 1.5rem;
+  --text-h3--line-height: 1.25;
+  --text-h4: 1.25rem;
+  --text-h4--line-height: 1.35;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.5;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+
+  /* Radius derivations from the single --radius source. */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Elevation — softer than Tailwind defaults to match Preply's gentle depth. */
+  --shadow-sm: 0 1px 2px 0 oklch(0.17 0.012 285 / 6%);
+  --shadow-md: 0 4px 12px -2px oklch(0.17 0.012 285 / 8%);
+  --shadow-lg: 0 12px 32px -8px oklch(0.17 0.012 285 / 12%);
 }
 
 * {
@@ -89,4 +135,14 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* Headings default to the display family; body text inherits Inter via body.font-sans. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
 }

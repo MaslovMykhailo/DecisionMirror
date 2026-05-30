@@ -16,6 +16,12 @@
     "en": "English",
     "uk": "Ukrainian"
   },
+  "Theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
   "UXState": {
     "loading": "Loading…",
     "analyzing": "Analyzing your decision…",

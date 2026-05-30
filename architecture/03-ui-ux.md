@@ -11,18 +11,50 @@ feel like a private journal, not a dashboard tool.
   code, not a black-box dependency). Accessible by default (Radix), themeable via CSS
   variables.
 - Composed feature components live in `components/<feature>/` and build on the `ui/` primitives.
+- **Base color:** `components.json` records `baseColor: "neutral"` as the generator seed, but
+  the realized base is the custom Preply-inspired ink + warm-neutral set in `app/globals.css`.
+  Because `cssVariables: true`, anything added via `shadcn add` binds to our semantic tokens
+  automatically — do not re-run with a different base color or hand-edit generated colors.
 - **Recharts** for the analytics dashboard, styled to the same token set.
 - Why shadcn over Ant Design: it composes with what the design already chose (Tailwind,
   next-themes, Recharts), keeps the bundle lean, and gives full control over the reflective
   visual tone. Ant Design's batteries-included speed wasn't worth its heavier, more
   opinionated styling and separate theming/i18n systems here.
 
-### Design tokens & theming
+### Design tokens & theming — the realized kit
 
-- A small token layer (CSS variables) defines color/spacing/typography; shadcn components read
-  from it, so dark mode and brand tweaks are one place.
-- **Dark theme** via `next-themes`: system default, user-toggleable, preference persisted.
-  Charts and tokens both have light/dark variants.
+The kit is a Preply-inspired visual language: a near-black ink primary, warm-neutral
+surfaces, moderate ~8px rounding, and restrained accent pops. All tokens live in
+**`app/globals.css`** as OKLCH custom properties under `:root` / `.dark`, mapped into
+Tailwind v4 via `@theme inline`. **Consume tokens through utilities — never hard-code a
+color, font, or size literal.** The `/design` route renders the full kit for visual review
+in both themes.
+
+**Color (semantic).** The standard shadcn set — `background`, `foreground`, `card`,
+`popover`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`,
+`ring` (+ their `-foreground` pairs) — defined for both `:root` and `.dark`. `primary` is
+the ink `#121117`; `accent`/`ring` are a deepened sky tuned so white text clears WCAG AA
+(≥4.5:1). Parity and contrast are enforced by `tests/design-tokens.test.ts` and
+`tests/design-contrast.test.ts`.
+
+**Brand accents & data-viz.** Named tokens `--color-brand-{sky,mint,pink,yellow}` for
+highlights and illustrations; `--color-chart-1..5` map onto the four accents + `primary`, so
+Recharts inherits the palette. Use `bg-brand-sky`, `text-brand-mint`, etc.
+
+**Typography.** Body = **Inter** (`font-sans`), display/headings = **Figtree**
+(`font-display`), both self-hosted via `next/font/google` (no FOUT, Cyrillic via
+`latin-ext`). Headings default to the display family. Use the paired size/line-height scale
+tokens (`text-display`, `text-h1`…`text-h4`, `text-body`, `text-small`, `text-caption`) — not
+arbitrary pixel values.
+
+**Radius & elevation.** Single `--radius: 0.5rem` (~8px) source; `sm/md/lg/xl` derive from
+it. Softer-than-default `shadow-sm/md/lg` elevation tokens for gentle depth.
+
+**Theming.** `next-themes` via `components/theme-provider.tsx` (`attribute="class"`,
+`defaultTheme="system"`, `enableSystem`, `disableTransitionOnChange`); `<html>` carries
+`suppressHydrationWarning` to avoid a theme flash. `components/theme-toggle.tsx` (shadcn
+dropdown + lucide sun/moon) is the user-facing control. System default, user-toggleable,
+preference persisted; charts and tokens both have light/dark variants.
 
 ### First-class UX states
 
