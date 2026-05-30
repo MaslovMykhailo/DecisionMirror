@@ -14,10 +14,13 @@ import type { AnalysisProvider } from "@/agent/provider/types";
 import type { AnalysisOutput } from "@/agent/schema";
 import type { Locale } from "@/lib/i18n/routing";
 
+export type AgentCheckpointer = unknown;
+
 export type AgentGraphDeps = {
   db: AgentDb;
   provider: AnalysisProvider;
   memory?: AgentMemory;
+  checkpointer?: AgentCheckpointer;
 };
 
 const AgentGraphAnnotation = Annotation.Root({
@@ -43,7 +46,7 @@ function routeAfterValidate(state: AgentState) {
 }
 
 export function createAgentGraph(deps: AgentGraphDeps) {
-  return new StateGraph(AgentGraphAnnotation)
+  const builder = new StateGraph(AgentGraphAnnotation)
     .addNode("load-memory", createLoadMemoryNode(deps))
     .addNode("analyze", createAnalyzeNode(deps))
     .addNode("validate", validateNode)
@@ -54,6 +57,8 @@ export function createAgentGraph(deps: AgentGraphDeps) {
     .addEdge("analyze", "validate")
     .addConditionalEdges("validate", routeAfterValidate, ["persist+remember", "fail"])
     .addEdge("persist+remember", END)
-    .addEdge("fail", END)
-    .compile();
+    .addEdge("fail", END);
+
+  if (!deps.checkpointer) return builder.compile();
+  return builder.compile({ checkpointer: deps.checkpointer as never });
 }

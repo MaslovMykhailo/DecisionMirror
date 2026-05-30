@@ -34,8 +34,8 @@ push / PR
 ```
 
 - **Postgres in CI:** a `services: postgres` container with the pgvector image; the workflow
-  runs `prisma migrate deploy` before integration tests. Same engine as production, so vector
-  + relational behaviour is real in CI.
+  runs `prisma migrate deploy` and `pnpm db:setup-checkpointer` before integration tests.
+  Same engine as production, so vector, checkpoint, and relational behaviour is real in CI.
 - **Caching:** pnpm store + Next.js build cache + Playwright browsers cached by key.
 - **No real model calls in CI:** unit/integration mock the provider; e2e stubs it. Keeps CI
   fast, free, and non-flaky. (Optional cheap structural eval smoke-check can run here; the
@@ -70,10 +70,10 @@ merge to main      ─▶  Vercel Production Deployment
 | Production | merge to main | hosted Postgres (Neon/Vercel) | Vercel env (Production scope) |
 
 Required secrets (mirrored across CI / Vercel as applicable): `DATABASE_URL`, `AUTH_SECRET`,
-`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `OPENAI_API_KEY`, embeddings key, `SENTRY_DSN`
-(+ auth token for source-map upload), `POSTHOG_KEY`, `LANGSMITH_API_KEY`, and LangSmith
-tracing/project variables when tracing is enabled. Documented in `.env.example`; never
-committed with values.
+`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`, `OPENAI_API_KEY`, `AGENT_EMBEDDINGS_PROVIDER`,
+embeddings key/model settings, `AGENT_MEMORY_TOP_K`, `SENTRY_DSN` (+ auth token for
+source-map upload), `POSTHOG_KEY`, `LANGSMITH_API_KEY`, and LangSmith tracing/project
+variables when tracing is enabled. Documented in `.env.example`; never committed with values.
 
 ---
 

@@ -26,7 +26,7 @@ args = [ "-y", "mcp-remote@latest", "https://mcp.sentry.dev/mcp" ]
 url = "https://mcp.posthog.com/mcp"
 
 [mcp_servers.langsmith]
-url = "https://langsmith-mcp-server.onrender.com/mcp"
+url = "https://eu.api.smith.langchain.com/mcp"
   [mcp_servers.langsmith.env_http_headers]
   "LANGSMITH-API-KEY" = "LANGSMITH_API_KEY"
 

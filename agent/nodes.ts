@@ -26,10 +26,16 @@ export type AgentDb = {
 };
 
 export type AgentMemory = {
-  recall: (args: { userId: string; decisionId: string }) => Promise<string[]>;
+  recall: (args: {
+    userId: string;
+    decisionId: string;
+    decisionInput: NonNullable<AgentState["decisionInput"]>;
+  }) => Promise<string[]>;
   remember: (args: {
     userId: string;
     decisionId: string;
+    analysisId: string;
+    decisionInput: NonNullable<AgentState["decisionInput"]>;
     analysis: AnalysisOutput;
   }) => Promise<void>;
 };
@@ -99,8 +105,14 @@ export function createLoadMemoryNode({
       };
     }
 
+    const decisionInput = {
+      situation: decision.situation,
+      decision: decision.decision,
+      reasoning: decision.reasoning,
+    };
     const priorPatterns = await memory.recall({
       decisionId: state.decisionId,
+      decisionInput,
       userId: decision.userId,
     });
 
@@ -110,11 +122,7 @@ export function createLoadMemoryNode({
       analysisVersion: analysis.version,
       userId: decision.userId,
       locale: routing.defaultLocale,
-      decisionInput: {
-        situation: decision.situation,
-        decision: decision.decision,
-        reasoning: decision.reasoning,
-      },
+      decisionInput,
       priorPatterns,
     };
   };
@@ -192,7 +200,9 @@ export function createPersistRememberNode({
   memory?: AgentMemory;
 }) {
   return async function persistRememberNode(state: AgentState): Promise<NodeResult> {
-    if (!state.analysisId || !state.validatedOutput || !state.userId) return {};
+    if (!state.analysisId || !state.validatedOutput || !state.userId || !state.decisionInput) {
+      return {};
+    }
 
     await db.analysis.update({
       where: { id: state.analysisId },
@@ -200,7 +210,9 @@ export function createPersistRememberNode({
       select: { id: true },
     });
     await memory.remember({
+      analysisId: state.analysisId,
       decisionId: state.decisionId,
+      decisionInput: state.decisionInput,
       userId: state.userId,
       analysis: state.validatedOutput,
     });

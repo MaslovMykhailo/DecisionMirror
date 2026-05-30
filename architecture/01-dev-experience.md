@@ -149,6 +149,7 @@ What this looks like per layer is detailed in [05 — Testing](./05-testing.md).
 pnpm install
 docker compose up -d        # local Postgres + pgvector
 pnpm db:migrate             # prisma migrate dev
+pnpm db:setup-checkpointer  # create LangGraph PostgresSaver checkpoint tables
 pnpm dev                    # next dev (Turbopack)
 pnpm test --watch           # Vitest in watch mode — the TDD companion
 pnpm test:e2e               # Playwright (LLM stubbed)
@@ -157,8 +158,9 @@ pnpm lint && pnpm typecheck # what CI will also run
 
 Environment is documented in `.env.example` (committed) and loaded from `.env.local`
 (git-ignored). Required keys: `DATABASE_URL`, `AUTH_SECRET`, `AUTH_GOOGLE_ID/SECRET`,
-`OPENAI_API_KEY`, embeddings key, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`, and
-LangSmith tracing/project variables when tracing is enabled.
+`OPENAI_API_KEY`, `AGENT_EMBEDDINGS_PROVIDER`, embeddings key/model settings,
+`AGENT_MEMORY_TOP_K`, `SENTRY_DSN`, `POSTHOG_KEY`, `LANGSMITH_API_KEY`, and LangSmith
+tracing/project variables when tracing is enabled.
 
 ---
 

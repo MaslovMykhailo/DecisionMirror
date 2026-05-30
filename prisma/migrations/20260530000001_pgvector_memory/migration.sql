@@ -12,15 +12,20 @@ CREATE TABLE IF NOT EXISTS "DecisionMemory" (
     "id"         TEXT NOT NULL,
     "userId"     TEXT NOT NULL,
     "decisionId" TEXT NOT NULL,
+    "analysisId" TEXT NOT NULL,
     "content"    TEXT NOT NULL,
     "embedding"  vector(1024) NOT NULL,
     "createdAt"  TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt"  TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "DecisionMemory_pkey" PRIMARY KEY ("id")
 );
 
 -- Recall is always filtered by userId — no cross-user leakage, ever.
 CREATE INDEX IF NOT EXISTS "DecisionMemory_userId_idx" ON "DecisionMemory" ("userId");
+CREATE INDEX IF NOT EXISTS "DecisionMemory_analysisId_idx" ON "DecisionMemory" ("analysisId");
+CREATE UNIQUE INDEX IF NOT EXISTS "DecisionMemory_userId_decisionId_key"
+    ON "DecisionMemory" ("userId", "decisionId");
 
 -- Approximate-nearest-neighbour index for cosine similarity search over the embeddings.
 CREATE INDEX IF NOT EXISTS "DecisionMemory_embedding_idx"
@@ -34,3 +39,7 @@ ALTER TABLE "DecisionMemory"
 ALTER TABLE "DecisionMemory"
     ADD CONSTRAINT "DecisionMemory_decisionId_fkey"
     FOREIGN KEY ("decisionId") REFERENCES "Decision" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "DecisionMemory"
+    ADD CONSTRAINT "DecisionMemory_analysisId_fkey"
+    FOREIGN KEY ("analysisId") REFERENCES "Analysis" ("id") ON DELETE CASCADE ON UPDATE CASCADE;

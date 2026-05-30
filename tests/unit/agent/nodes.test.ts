@@ -49,6 +49,11 @@ describe("agent nodes", () => {
     });
     expect(memory.recall).toHaveBeenCalledWith({
       decisionId: "decision_1",
+      decisionInput: {
+        situation: "Should I accept the new role?",
+        decision: "Accept the offer.",
+        reasoning: "It has more scope.",
+      },
       userId: "user_1",
     });
     expect(result).toMatchObject({

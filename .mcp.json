@@ -33,7 +33,7 @@
     },
     "langsmith": {
       "type": "http",
-      "url": "https://langsmith-mcp-server.onrender.com/mcp",
+      "url": "https://eu.api.smith.langchain.com/mcp",
       "headers": {
         "LANGSMITH-API-KEY": "${LANGSMITH_API_KEY}"
       }
