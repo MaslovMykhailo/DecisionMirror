@@ -1,16 +1,5 @@
-import { z } from "zod";
-
 import type { AuthenticatedUserIdResult } from "@/lib/auth/session";
-
-const decisionInputSchema = z.object({
-  situation: z.string().trim().min(1),
-  decision: z.string().trim().min(1),
-  reasoning: z
-    .string()
-    .trim()
-    .optional()
-    .transform((value) => (value && value.length > 0 ? value : undefined)),
-});
+import { createDecisionInputSchema } from "@/lib/decisions/validation";
 
 type GetUser = () => Promise<AuthenticatedUserIdResult>;
 
@@ -51,7 +40,7 @@ type BaseDeps = {
   db?: DecisionDb;
 };
 
-type CreateDecisionDeps = BaseDeps & {
+type AnalysisMutationDeps = BaseDeps & {
   triggerAnalysis?: (decisionId: string) => void | Promise<void>;
 };
 
@@ -86,11 +75,11 @@ async function requireDecisionOwner(decisionId: string, { getUser, db }: BaseDep
   return { user, decision, db: resolvedDb };
 }
 
-export async function createDecision(input: unknown, deps: CreateDecisionDeps) {
+export async function createDecision(input: unknown, deps: BaseDeps) {
   const user = await deps.getUser();
   if (!user.authenticated) return unauthenticatedResult();
 
-  const parsed = decisionInputSchema.safeParse(input);
+  const parsed = createDecisionInputSchema.safeParse(input);
   if (!parsed.success) {
     return {
       status: "validation_error" as const,
@@ -117,8 +106,6 @@ export async function createDecision(input: unknown, deps: CreateDecisionDeps) {
     select: { id: true },
   });
 
-  await deps.triggerAnalysis?.(decision.id);
-
   return {
     status: "success" as const,
     decisionId: decision.id,
@@ -140,7 +127,7 @@ export async function getDecisionDetails(decisionId: string, deps: BaseDeps) {
   return { status: "success" as const, decision };
 }
 
-export async function retryDecisionAnalysis(decisionId: string, deps: CreateDecisionDeps) {
+export async function retryDecisionAnalysis(decisionId: string, deps: AnalysisMutationDeps) {
   const { user, decision, db } = await requireDecisionOwner(decisionId, deps);
   if (!user.authenticated) return unauthenticatedResult();
   if (!decision) return { status: "not_found" as const };
@@ -164,7 +151,7 @@ export async function retryDecisionAnalysis(decisionId: string, deps: CreateDeci
   return { status: "success" as const, analysisId: analysis.id };
 }
 
-export async function reanalyzeDecision(decisionId: string, deps: CreateDecisionDeps) {
+export async function reanalyzeDecision(decisionId: string, deps: AnalysisMutationDeps) {
   const { user, decision, db } = await requireDecisionOwner(decisionId, deps);
   if (!user.authenticated) return unauthenticatedResult();
   if (!decision) return { status: "not_found" as const };

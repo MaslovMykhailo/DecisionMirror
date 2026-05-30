@@ -51,6 +51,21 @@
       "signup_failed": "We could not create your account."
     }
   },
+  "DecisionCapture": {
+    "title": "Capture a decision",
+    "situation": "Situation",
+    "decision": "Decision",
+    "reasoning": "Reasoning",
+    "reasoningOptional": "optional",
+    "submit": "Save decision",
+    "pending": "Saving decision",
+    "success": "Decision saved. Analysis is starting.",
+    "error": "We could not save this decision.",
+    "errors": {
+      "situation_required": "Describe the situation.",
+      "decision_required": "Enter the decision."
+    }
+  },
   "UXState": {
     "loading": "Loading…",
     "analyzing": "Analyzing your decision…",

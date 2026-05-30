@@ -35,7 +35,6 @@ describe("protected decision access", () => {
       decision: { create: vi.fn().mockResolvedValue({ id: "decision_1" }) },
       analysis: { create: vi.fn().mockResolvedValue({ id: "analysis_1" }) },
     };
-    const triggerAnalysis = vi.fn();
 
     await expect(
       createDecision(
@@ -46,7 +45,7 @@ describe("protected decision access", () => {
           userId: "attacker",
           ownerId: "attacker",
         },
-        { getUser: async () => authenticated, db, triggerAnalysis },
+        { getUser: async () => authenticated, db },
       ),
     ).resolves.toEqual({
       status: "success",
@@ -63,7 +62,14 @@ describe("protected decision access", () => {
       },
       select: { id: true },
     });
-    expect(triggerAnalysis).toHaveBeenCalledWith("decision_1");
+    expect(db.analysis.create).toHaveBeenCalledWith({
+      data: {
+        decisionId: "decision_1",
+        version: 1,
+        status: "processing",
+      },
+      select: { id: true },
+    });
   });
 
   it("scopes decision reads to the session user", async () => {

@@ -45,6 +45,13 @@ describeDb("authenticated decision isolation (integration)", () => {
     ).resolves.toMatchObject({
       userId: userA,
     });
+    await expect(
+      prisma.analysis.findUnique({ where: { id: result.analysisId } }),
+    ).resolves.toMatchObject({
+      decisionId: result.decisionId,
+      version: 1,
+      status: "processing",
+    });
   });
 
   it("denies cross-user read, retry, re-analysis, dashboard leakage, and memory recall", async () => {
