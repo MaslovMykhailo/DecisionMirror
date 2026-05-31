@@ -93,7 +93,10 @@
     "biasChartDescription": "Упередження, знайдені в готових аналізах.",
     "emptyTitle": "Готових аналізів ще немає",
     "emptyDescription": "Завершені аналізи з'являться тут після обробки рішень.",
-    "countLabel": "{count, plural, one {# аналіз} few {# аналізи} many {# аналізів} other {# аналізу}}"
+    "countLabel": "{count, plural, one {# аналіз} few {# аналізи} many {# аналізів} other {# аналізу}}",
+    "modeLabel": "Агрегація",
+    "modeLatest": "Останні",
+    "modeAll": "Усі версії"
   },
   "DecisionDetail": {
     "backToHistory": "Назад до історії",

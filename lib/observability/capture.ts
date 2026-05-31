@@ -16,6 +16,7 @@ export type AnalyticsEventMap = {
   analysis_retried: { trigger: "manual" | "stalled" };
   reanalysis_run: { prior_version: number };
   dashboard_viewed: Record<string, never>;
+  dashboard_mode_changed: { mode: "latest" | "all" };
   locale_switched: { from: string; to: string };
 };
 

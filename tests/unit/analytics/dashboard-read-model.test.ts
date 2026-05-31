@@ -24,7 +24,7 @@ describe("analytics dashboard read model", () => {
     };
 
     await expect(
-      getAnalyticsDashboard({ getUser: async () => authenticated, db }),
+      getAnalyticsDashboard({ getUser: async () => authenticated, db, mode: "all" }),
     ).resolves.toEqual({
       status: "success",
       categoryFrequency: [
@@ -106,6 +106,95 @@ describe("analytics dashboard read model", () => {
       biasFrequency: [],
       isEmpty: true,
     });
+  });
+
+  it("latest mode (default) aggregates the newest ready version per decision via DISTINCT ON", async () => {
+    const db = {
+      $queryRaw: vi
+        .fn()
+        .mockResolvedValueOnce([{ category: "career", count: 1n }])
+        .mockResolvedValueOnce([{ bias: "anchoring", count: 1n }]),
+    };
+
+    await expect(
+      getAnalyticsDashboard({ getUser: async () => authenticated, db }),
+    ).resolves.toEqual({
+      status: "success",
+      categoryFrequency: [{ category: "career", count: 1 }],
+      biasFrequency: [{ bias: "anchoring", count: 1 }],
+      isEmpty: false,
+    });
+
+    expect(db.$queryRaw.mock.calls[0]?.slice(1)).toEqual(["user_session"]);
+    expect(db.$queryRaw.mock.calls[1]?.slice(1)).toEqual(["user_session"]);
+
+    const categorySql = sqlFromCall(db.$queryRaw.mock.calls[0] ?? []);
+    expect(categorySql).toContain("DISTINCT ON");
+    expect(categorySql).toContain('a."decisionId"');
+    expect(categorySql).toMatch(/ORDER BY[\s\S]*"version" DESC/);
+    expect(categorySql).toContain('d."userId" = ?');
+    expect(categorySql).not.toContain('"situation"');
+
+    const biasSql = sqlFromCall(db.$queryRaw.mock.calls[1] ?? []);
+    expect(biasSql).toContain("DISTINCT ON");
+    expect(biasSql).toMatch(/ORDER BY[\s\S]*"version" DESC/);
+    expect(biasSql).toContain("jsonb_array_elements");
+    expect(biasSql).toContain('d."userId" = ?');
+  });
+
+  it("latest mode filters status = 'ready' before DISTINCT ON so a newer non-ready version cannot shadow it", async () => {
+    const db = {
+      $queryRaw: vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([]),
+    };
+
+    await getAnalyticsDashboard({ getUser: async () => authenticated, db });
+
+    const categorySql = sqlFromCall(db.$queryRaw.mock.calls[0] ?? []);
+    const readyIdx = categorySql.indexOf(`a."status" = 'ready'::"AnalysisStatus"`);
+    const orderIdx = categorySql.search(/ORDER BY[\s\S]*"version" DESC/);
+    expect(readyIdx).toBeGreaterThan(-1);
+    expect(orderIdx).toBeGreaterThan(-1);
+    expect(readyIdx).toBeLessThan(orderIdx);
+  });
+
+  it("all mode preserves the all-versions aggregation queries and counts", async () => {
+    const db = {
+      $queryRaw: vi
+        .fn()
+        .mockResolvedValueOnce([{ category: "career", count: 3n }])
+        .mockResolvedValueOnce([{ bias: "anchoring", count: 3n }]),
+    };
+
+    await expect(
+      getAnalyticsDashboard({ getUser: async () => authenticated, db, mode: "all" }),
+    ).resolves.toEqual({
+      status: "success",
+      categoryFrequency: [{ category: "career", count: 3 }],
+      biasFrequency: [{ bias: "anchoring", count: 3 }],
+      isEmpty: false,
+    });
+
+    const categorySql = sqlFromCall(db.$queryRaw.mock.calls[0] ?? []);
+    expect(categorySql).not.toContain("DISTINCT ON");
+    expect(categorySql).toContain('GROUP BY a."category"');
+
+    const biasSql = sqlFromCall(db.$queryRaw.mock.calls[1] ?? []);
+    expect(biasSql).not.toContain("DISTINCT ON");
+  });
+
+  it("falls back to latest mode for an unrecognized mode value", async () => {
+    const db = {
+      $queryRaw: vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([]),
+    };
+
+    await getAnalyticsDashboard({
+      getUser: async () => authenticated,
+      db,
+      mode: "bogus" as unknown as "latest",
+    });
+
+    const categorySql = sqlFromCall(db.$queryRaw.mock.calls[0] ?? []);
+    expect(categorySql).toContain("DISTINCT ON");
   });
 
   it("does not expose aggregation data when the user is unauthenticated", async () => {

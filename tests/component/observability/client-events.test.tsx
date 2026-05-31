@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NextIntlClientProvider } from "next-intl";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -12,10 +12,14 @@ vi.mock("@/lib/i18n/navigation", () => ({
   useRouter: () => ({ replace }),
 }));
 
+import { AnalyticsModeToggle } from "@/components/analytics/analytics-mode-toggle";
 import { DashboardViewTracker } from "@/components/analytics/dashboard-view-tracker";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
-const messages = { LanguageSwitcher: { label: "Language", en: "English", uk: "Українська" } };
+const messages = {
+  LanguageSwitcher: { label: "Language", en: "English", uk: "Українська" },
+  AnalyticsDashboard: { modeLabel: "Aggregation", modeLatest: "Latest", modeAll: "All versions" },
+};
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -37,5 +41,17 @@ describe("client analytics events", () => {
     await userEvent.selectOptions(document.querySelector("select")!, "uk");
 
     expect(capture).toHaveBeenCalledWith("locale_switched", { from: "en", to: "uk" });
+  });
+
+  it("emits dashboard_mode_changed with only the enum mode when the toggle switches", async () => {
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <AnalyticsModeToggle mode="latest" />
+      </NextIntlClientProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "All versions" }));
+
+    expect(capture).toHaveBeenCalledWith("dashboard_mode_changed", { mode: "all" });
   });
 });

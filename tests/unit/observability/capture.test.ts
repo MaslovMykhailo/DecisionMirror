@@ -36,6 +36,21 @@ describe("typed analytics capture wrapper", () => {
     });
   });
 
+  it("forwards dashboard_mode_changed carrying only the enum mode", async () => {
+    const capture = vi.fn();
+    await captureEvent(
+      "dashboard_mode_changed",
+      { mode: "all" },
+      { distinctId: "user_1", client: { capture } },
+    );
+
+    expect(capture).toHaveBeenCalledWith({
+      distinctId: "user_1",
+      event: "dashboard_mode_changed",
+      properties: { mode: "all" },
+    });
+  });
+
   it("is a no-op when no client is configured (no PostHog key)", async () => {
     await expect(
       captureEvent("dashboard_viewed", {}, { distinctId: "user_1", client: null }),

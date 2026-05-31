@@ -1,12 +1,4 @@
-# analytics-dashboard Specification
-
-## Purpose
-
-Define the authenticated analytics dashboard read model and chart surface for category
-and cognitive-bias frequency summaries over a user's ready analyses while preserving
-per-user isolation and telemetry privacy.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: User-scoped dashboard aggregation
 
@@ -81,6 +73,8 @@ mode value MUST be treated as `latest`.
 - **THEN** the dashboard read model returns an unauthenticated state
 - **AND** no aggregation query result is exposed
 
+## ADDED Requirements
+
 ### Requirement: Dashboard analytics mode toggle
 
 The analytics dashboard SHALL present a toggle that lets the authenticated user switch between
@@ -111,65 +105,3 @@ helpers and MUST NOT expose decision content.
 - **WHEN** the dashboard mode toggle renders in either mode
 - **THEN** it shows only localized mode labels and chart aggregates
 - **AND** it does not render raw decision text or analysis prose
-
-### Requirement: Dashboard chart rendering
-
-The system SHALL render dashboard charts for category frequency and cognitive-bias
-frequency using Recharts. The charts MUST consume existing design-system semantic tokens
-and chart color tokens, and display taxonomy labels through the existing localization
-helpers while keeping canonical identifiers in the read model.
-
-#### Scenario: Category chart renders localized labels
-
-- **WHEN** the dashboard receives category-frequency rows
-- **THEN** it renders a category frequency chart
-- **AND** the visible labels use localized category labels for the active locale
-
-#### Scenario: Bias chart renders localized labels
-
-- **WHEN** the dashboard receives bias-frequency rows
-- **THEN** it renders a cognitive-bias frequency chart
-- **AND** the visible labels use localized bias labels for the active locale
-
-#### Scenario: Charts use design tokens
-
-- **WHEN** the dashboard charts render
-- **THEN** chart marks, text, grid lines, and tooltip surfaces use semantic or chart color
-  tokens
-- **AND** the charts render correctly in both light and dark themes
-
-### Requirement: Dashboard empty state
-
-The system SHALL render an explicit dashboard empty state when the authenticated user has
-no ready analyses available for aggregation. The empty state MUST be based on the absence
-of ready-analysis aggregation data, not merely on the absence of saved decisions.
-
-#### Scenario: Empty state with no ready analyses
-
-- **WHEN** an authenticated user has no ready analyses
-- **THEN** the dashboard renders an empty state instead of empty charts
-- **AND** the empty state does not expose raw decision content
-
-#### Scenario: Decisions without ready analyses still show empty state
-
-- **WHEN** an authenticated user has saved decisions whose newest analyses are processing
-  or failed
-- **THEN** the dashboard renders the empty state
-- **AND** processing and failed analyses do not create zero-value chart rows
-
-### Requirement: Analytics page layout does not stretch content
-
-The analytics dashboard page SHALL lay out its content from the top of the page and SHALL NOT
-stretch its cards or empty state to fill the viewport height. The empty state and the chart cards
-MUST render at their natural height without large injected vertical gaps.
-
-#### Scenario: Empty state renders without distortion
-
-- **WHEN** an authenticated user with no ready analyses opens the analytics page
-- **THEN** the empty state renders at its natural height and is not stretched to fill the viewport
-
-#### Scenario: Chart content renders without large gaps
-
-- **WHEN** an authenticated user with ready analyses opens the analytics page
-- **THEN** the chart cards render at their natural height
-- **AND** no large vertical gap is injected below the content to fill the viewport

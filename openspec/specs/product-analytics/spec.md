@@ -44,6 +44,7 @@ occurs. The events and their properties are:
 - `analysis_retried` — `trigger` (`manual` | `stalled`)
 - `reanalysis_run` — `prior_version`
 - `dashboard_viewed` — (no properties)
+- `dashboard_mode_changed` — `mode` (`latest` | `all`)
 - `locale_switched` — `from`, `to`
 
 Each event MUST be emitted exactly once per occurrence of its triggering action.
@@ -76,6 +77,13 @@ Each event MUST be emitted exactly once per occurrence of its triggering action.
 - **WHEN** an authenticated user views the analytics dashboard
 - **THEN** a `dashboard_viewed` event is emitted
 - **AND** when the user switches UI locale, `locale_switched` is emitted with `from` and `to`
+
+#### Scenario: Dashboard mode change is tracked
+
+- **WHEN** an authenticated user switches the analytics dashboard mode between latest and
+  all-versions
+- **THEN** a `dashboard_mode_changed` event is emitted with `mode` of `latest` or `all`
+- **AND** the event carries no decision content
 
 ### Requirement: Analytics event privacy
 

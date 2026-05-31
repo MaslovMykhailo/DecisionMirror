@@ -93,7 +93,10 @@
     "biasChartDescription": "Biases found across ready analyses.",
     "emptyTitle": "No ready analyses yet",
     "emptyDescription": "Completed analyses will appear here once decisions finish processing.",
-    "countLabel": "{count, plural, one {# analysis} other {# analyses}}"
+    "countLabel": "{count, plural, one {# analysis} other {# analyses}}",
+    "modeLabel": "Aggregation",
+    "modeLatest": "Latest",
+    "modeAll": "All versions"
   },
   "DecisionDetail": {
     "backToHistory": "Back to history",

@@ -12,9 +12,17 @@ type DashboardDb = {
   $queryRaw: (query: TemplateStringsArray, ...values: unknown[]) => Promise<unknown>;
 };
 
+export type DashboardMode = "latest" | "all";
+
+/** Normalize an arbitrary mode value; anything but `all` falls back to the latest default. */
+export function normalizeDashboardMode(mode: unknown): DashboardMode {
+  return mode === "all" ? "all" : "latest";
+}
+
 type DashboardDeps = {
   getUser: GetUser;
   db?: DashboardDb;
+  mode?: DashboardMode;
 };
 
 type CategoryFrequencyQueryRow = {
@@ -104,40 +112,94 @@ function biasFrequencyFromRows(rows: BiasFrequencyQueryRow[]): DashboardBiasFreq
 export async function getAnalyticsDashboard({
   getUser,
   db,
+  mode,
 }: DashboardDeps): Promise<AnalyticsDashboardResult> {
   const user = await getUser();
   if (!user.authenticated) return { status: "unauthenticated" };
 
+  const resolvedMode = normalizeDashboardMode(mode);
   const resolvedDb = await resolveDb(db);
-  const categoryRows = (await resolvedDb.$queryRaw`
-    SELECT
-      a."category"::text AS "category",
-      COUNT(*) AS "count"
-    FROM "Analysis" a
-    INNER JOIN "Decision" d ON d."id" = a."decisionId"
-    WHERE d."userId" = ${user.userId}
-      AND a."status" = 'ready'::"AnalysisStatus"
-      AND a."category" IS NOT NULL
-    GROUP BY a."category"
-  `) as CategoryFrequencyQueryRow[];
 
-  const biasRows = (await resolvedDb.$queryRaw`
-    SELECT
-      bias_entry->>'id' AS "bias",
-      COUNT(*) AS "count"
-    FROM "Analysis" a
-    INNER JOIN "Decision" d ON d."id" = a."decisionId"
-    CROSS JOIN LATERAL jsonb_array_elements(
-      CASE
-        WHEN jsonb_typeof(a."biases"::jsonb) = 'array' THEN a."biases"::jsonb
-        ELSE '[]'::jsonb
-      END
-    ) AS bias_entry
-    WHERE d."userId" = ${user.userId}
-      AND a."status" = 'ready'::"AnalysisStatus"
-      AND bias_entry ? 'id'
-    GROUP BY bias_entry->>'id'
-  `) as BiasFrequencyQueryRow[];
+  // Latest mode aggregates exactly one analysis per decision — the newest `ready`
+  // version. Filtering `status = 'ready'` before `DISTINCT ON (decisionId)` guarantees a
+  // newer `processing`/`failed` row never shadows the last good analysis, and the
+  // `ORDER BY decisionId, version DESC` is served by the existing
+  // `@@unique([decisionId, version])` index in one pass — no new index, no extra round-trip.
+  const categoryRows = (
+    resolvedMode === "latest"
+      ? await resolvedDb.$queryRaw`
+          WITH latest AS (
+            SELECT DISTINCT ON (a."decisionId")
+              a."category" AS "category"
+            FROM "Analysis" a
+            INNER JOIN "Decision" d ON d."id" = a."decisionId"
+            WHERE d."userId" = ${user.userId}
+              AND a."status" = 'ready'::"AnalysisStatus"
+            ORDER BY a."decisionId", a."version" DESC
+          )
+          SELECT
+            latest."category"::text AS "category",
+            COUNT(*) AS "count"
+          FROM latest
+          WHERE latest."category" IS NOT NULL
+          GROUP BY latest."category"
+        `
+      : await resolvedDb.$queryRaw`
+          SELECT
+            a."category"::text AS "category",
+            COUNT(*) AS "count"
+          FROM "Analysis" a
+          INNER JOIN "Decision" d ON d."id" = a."decisionId"
+          WHERE d."userId" = ${user.userId}
+            AND a."status" = 'ready'::"AnalysisStatus"
+            AND a."category" IS NOT NULL
+          GROUP BY a."category"
+        `
+  ) as CategoryFrequencyQueryRow[];
+
+  const biasRows = (
+    resolvedMode === "latest"
+      ? await resolvedDb.$queryRaw`
+          WITH latest AS (
+            SELECT DISTINCT ON (a."decisionId")
+              a."biases" AS "biases"
+            FROM "Analysis" a
+            INNER JOIN "Decision" d ON d."id" = a."decisionId"
+            WHERE d."userId" = ${user.userId}
+              AND a."status" = 'ready'::"AnalysisStatus"
+            ORDER BY a."decisionId", a."version" DESC
+          )
+          SELECT
+            bias_entry->>'id' AS "bias",
+            COUNT(*) AS "count"
+          FROM latest
+          CROSS JOIN LATERAL jsonb_array_elements(
+            CASE
+              WHEN jsonb_typeof(latest."biases"::jsonb) = 'array' THEN latest."biases"::jsonb
+              ELSE '[]'::jsonb
+            END
+          ) AS bias_entry
+          WHERE bias_entry ? 'id'
+          GROUP BY bias_entry->>'id'
+        `
+      : await resolvedDb.$queryRaw`
+          SELECT
+            bias_entry->>'id' AS "bias",
+            COUNT(*) AS "count"
+          FROM "Analysis" a
+          INNER JOIN "Decision" d ON d."id" = a."decisionId"
+          CROSS JOIN LATERAL jsonb_array_elements(
+            CASE
+              WHEN jsonb_typeof(a."biases"::jsonb) = 'array' THEN a."biases"::jsonb
+              ELSE '[]'::jsonb
+            END
+          ) AS bias_entry
+          WHERE d."userId" = ${user.userId}
+            AND a."status" = 'ready'::"AnalysisStatus"
+            AND bias_entry ? 'id'
+          GROUP BY bias_entry->>'id'
+        `
+  ) as BiasFrequencyQueryRow[];
 
   const categoryFrequency = categoryFrequencyFromRows(categoryRows);
   const biasFrequency = biasFrequencyFromRows(biasRows);
