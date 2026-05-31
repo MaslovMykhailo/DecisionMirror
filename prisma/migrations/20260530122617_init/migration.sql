@@ -1,3 +1,0 @@
--- Intentionally empty.
--- The pgvector-backed DecisionMemory table is managed by
--- 20260530000001_pgvector_memory and must remain present in the final migrated schema.
