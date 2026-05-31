@@ -22,27 +22,24 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   const [isPending, startTransition] = useTransition();
 
   return (
-    <label className={cn("inline-flex items-center gap-2 text-sm", className)}>
-      <span className="text-muted-foreground">{t("label")}</span>
-      <select
-        value={locale}
-        disabled={isPending}
-        aria-label={t("label")}
-        className="bg-background rounded-md border px-2 py-1"
-        onChange={(event) => {
-          const nextLocale = event.target.value as Locale;
-          captureClientEvent("locale_switched", { from: locale, to: nextLocale });
-          startTransition(() => {
-            router.replace(pathname, { locale: nextLocale });
-          });
-        }}
-      >
-        {routing.locales.map((option) => (
-          <option key={option} value={option}>
-            {t(option)}
-          </option>
-        ))}
-      </select>
-    </label>
+    <select
+      value={locale}
+      disabled={isPending}
+      aria-label={t("label")}
+      className={cn("border-input bg-background h-9 rounded-md border px-2 text-sm", className)}
+      onChange={(event) => {
+        const nextLocale = event.target.value as Locale;
+        captureClientEvent("locale_switched", { from: locale, to: nextLocale });
+        startTransition(() => {
+          router.replace(pathname, { locale: nextLocale });
+        });
+      }}
+    >
+      {routing.locales.map((option) => (
+        <option key={option} value={option}>
+          {t(option)}
+        </option>
+      ))}
+    </select>
   );
 }

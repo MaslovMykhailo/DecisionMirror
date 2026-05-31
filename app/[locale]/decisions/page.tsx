@@ -1,3 +1,4 @@
+import { AppNav } from "@/components/app-nav";
 import { DecisionHistoryList } from "@/components/decisions/decision-history-list";
 import { getAuthenticatedUserId } from "@/lib/auth/server-session";
 import {
@@ -19,7 +20,8 @@ export default async function DecisionHistoryPage({ searchParams }: DecisionHist
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto grid min-h-screen w-full max-w-4xl gap-8 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
+        <AppNav />
         <DecisionHistoryList decisions={decisions} filters={filters} sort={sort} />
       </div>
     </main>

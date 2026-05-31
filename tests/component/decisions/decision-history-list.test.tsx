@@ -35,6 +35,7 @@ const messages = {
     allBiases: "All biases",
     sortCreatedAt: "Newest first",
     sortComplexity: "Complexity",
+    complexityLabel: "Complexity: {value}",
     openDetail: "Open decision",
   },
   AnalysisState: {
@@ -164,6 +165,35 @@ describe("decision history list", () => {
     expect(
       screen.getByText("Analysis failed: The structured output did not match the contract."),
     ).toBeDefined();
+  });
+
+  it("shows complexity on a ready row and omits it on a non-ready row", () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}")));
+
+    renderWithIntl(
+      <DecisionHistoryList
+        decisions={[
+          historyItem({ id: "decision_ready", complexity: 7 }),
+          historyItem({
+            id: "decision_processing",
+            summary: "Wait before moving cities",
+            complexity: null,
+            newestAnalysis: {
+              analysisId: "analysis_processing",
+              version: 1,
+              status: "processing",
+              updatedAt: "2026-05-30T12:10:00.000Z",
+              isStalled: false,
+              retryable: false,
+            },
+            newestReadyCategory: null,
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Complexity: 7")).toBeDefined();
+    expect(screen.getAllByText(/^Complexity: /)).toHaveLength(1);
   });
 
   it("renders an empty state without decision rows", () => {

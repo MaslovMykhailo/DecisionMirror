@@ -81,6 +81,7 @@
     "allBiases": "All biases",
     "sortCreatedAt": "Newest first",
     "sortComplexity": "Complexity",
+    "complexityLabel": "Complexity: {value}",
     "openDetail": "Open decision"
   },
   "AnalyticsDashboard": {
@@ -102,6 +103,7 @@
     "reasoning": "Reasoning",
     "analysis": "Analysis",
     "categoryLabel": "Category: {category}",
+    "complexityLabel": "Complexity: {value}",
     "biases": "Biases",
     "missedAlternatives": "Missed alternatives",
     "premortemRisks": "Premortem risks",

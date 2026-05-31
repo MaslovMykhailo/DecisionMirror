@@ -81,6 +81,7 @@
     "allBiases": "Усі упередження",
     "sortCreatedAt": "Найновіші спочатку",
     "sortComplexity": "Складність",
+    "complexityLabel": "Складність: {value}",
     "openDetail": "Відкрити рішення"
   },
   "AnalyticsDashboard": {
@@ -102,6 +103,7 @@
     "reasoning": "Обґрунтування",
     "analysis": "Аналіз",
     "categoryLabel": "Категорія: {category}",
+    "complexityLabel": "Складність: {value}",
     "biases": "Упередження",
     "missedAlternatives": "Пропущені альтернативи",
     "premortemRisks": "Ризики премортему",

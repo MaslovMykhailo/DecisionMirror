@@ -23,6 +23,7 @@ vi.mock("@/lib/i18n/navigation", () => ({
       {children}
     </a>
   ),
+  usePathname: () => "/",
 }));
 
 const messages = {
@@ -31,6 +32,7 @@ const messages = {
     tagline: "See a choice from the outside before it becomes a regret.",
   },
   Nav: {
+    home: "Home",
     history: "History",
     dashboard: "Dashboard",
   },

@@ -13,7 +13,7 @@ import type {
   DecisionHistoryFilters,
   DecisionHistoryItem,
   DecisionHistorySort,
-} from "@/lib/decisions/history";
+} from "@/lib/decisions/history-shared";
 import { Link, usePathname, useRouter } from "@/lib/i18n/navigation";
 import { useTaxonomyLabels } from "@/lib/i18n/taxonomy-labels";
 import {
@@ -200,9 +200,14 @@ export function DecisionHistoryList({
                         })}
                       </p>
                     ) : null}
+                    {decision.newestAnalysis?.status === "ready" && decision.complexity !== null ? (
+                      <p className="text-muted-foreground text-sm">
+                        {t("complexityLabel", { value: decision.complexity })}
+                      </p>
+                    ) : null}
                   </div>
 
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2 self-center">
                     {decision.newestAnalysis ? (
                       <AnalysisStatusBadge
                         status={decision.newestAnalysis.status}

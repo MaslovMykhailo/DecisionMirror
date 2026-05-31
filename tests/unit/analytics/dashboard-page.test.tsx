@@ -9,6 +9,7 @@ vi.mock("@/lib/analytics/dashboard", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/analytics/dashboard")>()),
   getAnalyticsDashboard,
 }));
+vi.mock("@/components/app-nav", () => ({ AppNav: () => <nav data-testid="app-nav" /> }));
 vi.mock("@/components/analytics/dashboard-view", () => ({
   AnalyticsDashboardView: ({
     dashboard,

@@ -9,6 +9,7 @@ vi.mock("@/lib/decisions/history", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/decisions/history")>()),
   getDecisionHistoryList,
 }));
+vi.mock("@/components/app-nav", () => ({ AppNav: () => <nav data-testid="app-nav" /> }));
 vi.mock("@/components/decisions/decision-history-list", () => ({
   DecisionHistoryList: ({
     decisions,

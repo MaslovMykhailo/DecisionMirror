@@ -12,10 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/i18n/navigation";
 import { useTaxonomyLabels } from "@/lib/i18n/taxonomy-labels";
-import type {
-  DecisionHistoryDetailResult,
-  DecisionHistoryReadyAnalysis,
-} from "@/lib/decisions/history";
+import {
+  deriveDecisionComplexity,
+  type DecisionHistoryDetailResult,
+  type DecisionHistoryReadyAnalysis,
+} from "@/lib/decisions/history-shared";
 
 type DecisionDetailViewProps = {
   result: DecisionHistoryDetailResult;
@@ -57,12 +58,18 @@ function ReadyAnalysisSections({ analysis }: { analysis: DecisionHistoryReadyAna
   const t = useTranslations("DecisionDetail");
   const labels = useTaxonomyLabels();
   const result = analysis.result;
+  const complexity = deriveDecisionComplexity(result);
 
   return (
     <div className="grid gap-5">
       <p className="text-muted-foreground text-sm">
         {t("categoryLabel", { category: labels.category(result.category) })}
       </p>
+      {complexity !== null ? (
+        <p className="text-muted-foreground text-sm">
+          {t("complexityLabel", { value: complexity })}
+        </p>
+      ) : null}
 
       <section className="grid gap-2">
         <h3 className="font-heading text-base font-semibold">{t("biases")}</h3>

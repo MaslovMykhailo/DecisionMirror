@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import type { AnalysisStatus } from "@/lib/decisions/history";
+import type { AnalysisStatus } from "@/lib/decisions/history-shared";
 import { useRouter } from "@/lib/i18n/navigation";
 
 type VisibleDecisionStatus = {

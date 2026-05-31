@@ -3,7 +3,7 @@
 import { AlertTriangle, CheckCircle2, LoaderCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import type { AnalysisStatus } from "@/lib/decisions/history";
+import type { AnalysisStatus } from "@/lib/decisions/history-shared";
 import { cn } from "@/lib/utils";
 
 type DisplayedAnalysisStatus = AnalysisStatus | "stalled";

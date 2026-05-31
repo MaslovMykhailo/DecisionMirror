@@ -6,6 +6,7 @@ const getDecisionHistoryDetail = vi.fn();
 
 vi.mock("@/lib/auth/server-session", () => ({ getAuthenticatedUserId }));
 vi.mock("@/lib/decisions/history", () => ({ getDecisionHistoryDetail }));
+vi.mock("@/components/app-nav", () => ({ AppNav: () => <nav data-testid="app-nav" /> }));
 vi.mock("@/components/decisions/decision-detail-view", () => ({
   DecisionDetailView: ({ result }: { result: { status: string } }) => (
     <div data-testid="detail-view">{result.status}</div>

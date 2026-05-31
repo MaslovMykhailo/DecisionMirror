@@ -1,4 +1,6 @@
 import { SignupForm } from "@/components/auth/signup-form";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { googleSignInAction } from "@/lib/auth/actions";
 import { signupWithCredentials } from "@/lib/auth/signup";
 import type { AuthFormState } from "@/lib/auth/form-actions";
@@ -35,13 +37,19 @@ export default async function SignupPage({ params }: SignupPageProps) {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-sm items-center px-6">
-      <SignupForm
-        signupAction={signupAction}
-        googleAction={googleSignInAction}
-        loginHref={`/${locale}/login`}
-        redirectTo={`/${locale}`}
-      />
+    <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col px-6">
+      <div className="flex items-center justify-between gap-2 py-4">
+        <LanguageSwitcher />
+        <ThemeToggle />
+      </div>
+      <div className="flex flex-1 items-center">
+        <SignupForm
+          signupAction={signupAction}
+          googleAction={googleSignInAction}
+          loginHref={`/${locale}/login`}
+          redirectTo={`/${locale}`}
+        />
+      </div>
     </main>
   );
 }

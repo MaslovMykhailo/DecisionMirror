@@ -5,13 +5,29 @@ import {
   type AnalysisRetryabilityOptions,
 } from "@/lib/decisions/analysis-retryability";
 import {
-  biasSchema,
-  categorySchema,
-  type CognitiveBias,
-  type DecisionCategory,
-} from "@/lib/taxonomy";
+  deriveDecisionComplexity,
+  type AnalysisStatus,
+  type DecisionHistoryAnalysisSummary,
+  type DecisionHistoryDetail,
+  type DecisionHistoryDetailResult,
+  type DecisionHistoryFilters,
+  type DecisionHistoryItem,
+  type DecisionHistoryReadyAnalysis,
+  type DecisionHistorySort,
+} from "@/lib/decisions/history-shared";
+import { biasSchema, categorySchema } from "@/lib/taxonomy";
 
-export type AnalysisStatus = "processing" | "ready" | "failed";
+export {
+  deriveDecisionComplexity,
+  type AnalysisStatus,
+  type DecisionHistoryAnalysisSummary,
+  type DecisionHistoryDetail,
+  type DecisionHistoryDetailResult,
+  type DecisionHistoryFilters,
+  type DecisionHistoryItem,
+  type DecisionHistoryReadyAnalysis,
+  type DecisionHistorySort,
+};
 
 type GetUser = () => Promise<AuthenticatedUserIdResult>;
 
@@ -67,60 +83,6 @@ type DecisionHistoryDeps = AnalysisRetryabilityOptions & {
 };
 
 type DecisionHistorySearchParams = Record<string, string | string[] | undefined>;
-
-export type DecisionHistoryFilters = {
-  category: DecisionCategory | null;
-  bias: CognitiveBias | null;
-};
-
-export type DecisionHistorySort = "created_at" | "complexity";
-
-export type DecisionHistoryAnalysisSummary = {
-  analysisId: string;
-  version: number;
-  status: AnalysisStatus;
-  updatedAt: string;
-  isStalled: boolean;
-  retryable: boolean;
-  failureReason?: string;
-};
-
-export type DecisionHistoryItem = {
-  id: string;
-  summary: string;
-  createdAt: string;
-  updatedAt: string;
-  newestAnalysis: DecisionHistoryAnalysisSummary | null;
-  newestReadyCategory: DecisionCategory | null;
-  complexity: number | null;
-};
-
-export type DecisionHistoryReadyAnalysis = {
-  analysisId: string;
-  version: number;
-  updatedAt: string;
-  result: AnalysisOutput;
-};
-
-export type DecisionHistoryDetail = {
-  id: string;
-  situation: string;
-  decision: string;
-  reasoning: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type DecisionHistoryDetailResult =
-  | { status: "unauthenticated" }
-  | { status: "not_found" }
-  | {
-      status: "success";
-      decision: DecisionHistoryDetail;
-      newestAnalysis: DecisionHistoryAnalysisSummary | null;
-      readyAnalysis: DecisionHistoryReadyAnalysis | null;
-      readyAnalyses: DecisionHistoryReadyAnalysis[];
-    };
 
 function firstSearchParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -203,13 +165,6 @@ function newestReadyAnalysisResult(rows: DecisionHistoryAnalysisRow[]) {
   }
 
   return null;
-}
-
-export function deriveDecisionComplexity(analysis: AnalysisOutput | null) {
-  if (!analysis) return null;
-  return (
-    analysis.biases.length + analysis.premortemRisks.length + analysis.missedAlternatives.length
-  );
 }
 
 function readyAnalysis(row: DecisionHistoryDetailAnalysisRow | undefined) {

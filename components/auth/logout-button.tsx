@@ -14,9 +14,9 @@ export function LogoutButton({ action, redirectTo }: LogoutButtonProps) {
   return (
     <form action={action}>
       <input type="hidden" name="redirectTo" value={redirectTo} />
-      <Button type="submit" variant="outline">
+      <Button type="submit" variant="outline" size="sm" className="h-9">
         <LogOut />
-        {t("logout")}
+        <span className="sr-only sm:not-sr-only">{t("logout")}</span>
       </Button>
     </form>
   );

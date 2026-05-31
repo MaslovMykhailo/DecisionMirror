@@ -25,6 +25,7 @@ const messages = {
     reasoning: "Reasoning",
     analysis: "Analysis",
     categoryLabel: "Category: {category}",
+    complexityLabel: "Complexity: {value}",
     biases: "Biases",
     missedAlternatives: "Missed alternatives",
     premortemRisks: "Premortem risks",
@@ -184,6 +185,34 @@ describe("decision detail view", () => {
     expect(
       screen.getByText("The hiring manager avoids answering questions about turnover."),
     ).toBeDefined();
+  });
+
+  it("shows complexity for a ready analysis and omits it when not ready", () => {
+    const { unmount } = renderWithIntl(<DecisionDetailView result={successResult()} />);
+
+    // validAnalysisOutput: 2 biases + 1 premortem risk + 1 missed alternative = 4.
+    expect(screen.getByText("Complexity: 4")).toBeDefined();
+    unmount();
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}")));
+    renderWithIntl(
+      <DecisionDetailView
+        result={successResult({
+          newestAnalysis: {
+            analysisId: "analysis_processing",
+            version: 1,
+            status: "processing",
+            updatedAt: "2026-05-30T12:05:00.000Z",
+            isStalled: false,
+            retryable: false,
+          },
+          readyAnalysis: null,
+          readyAnalyses: [],
+        })}
+      />,
+    );
+
+    expect(screen.queryByText(/^Complexity: /)).toBeNull();
   });
 
   it("shows processing when no ready result exists", () => {
